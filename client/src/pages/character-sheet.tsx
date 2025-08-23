@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +6,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
 import DiceRoller from "@/components/dice-roller";
+import RollHistoryVisual from "@/components/roll-history-visual";
 import SanityTracker from "@/components/sanity-tracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export default function CharacterSheet() {
   const characterId = params.id;
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [rollHistory, setRollHistory] = useState<any[]>([]);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -308,6 +310,13 @@ export default function CharacterSheet() {
             )}
           </div>
         </div>
+        
+        {/* Roll History */}
+        <RollHistoryVisual 
+          rolls={rollHistory}
+          className="mt-6"
+          maxItems={15}
+        />
       </div>
     </div>
   );

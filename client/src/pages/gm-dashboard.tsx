@@ -4,7 +4,12 @@ import { useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import Navigation from "@/components/navigation";
+import ConnectionIndicator from "@/components/connection-indicator";
+import RollHistoryVisual from "@/components/roll-history-visual";
+import GMSecretRoll from "@/components/gm-secret-roll";
+import NarrativeTools from "@/components/narrative-tools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +19,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollDice, parseDiceFormula } from "@/lib/dice";
 import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
+import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
-  Eye, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle 
+  Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
+  Users, Clock, AlertTriangle, BookOpen 
 } from "lucide-react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
@@ -30,39 +36,29 @@ export default function GMDashboard() {
   const sessionId = params.sessionId;
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const { playRoll, playCritical, playFumble } = useDiceSound();
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [effectModalOpen, setEffectModalOpen] = useState(false);
   const [effectType, setEffectType] = useState<string>("");
   const [customDice, setCustomDice] = useState("");
   const [rollResults, setRollResults] = useState<Array<{ result: number; dice: string; timestamp: Date }>>([]);
+  const [isSecretRoll, setIsSecretRoll] = useState(false);
 
   // WebSocket connection for real-time updates
+  const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
+
   useEffect(() => {
-    if (!sessionId) return;
+    if (isConnected && sessionId) {
+      sendMessage('join_session', { sessionId });
+    }
+  }, [isConnected, sessionId, sendMessage]);
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
-
-    socket.onopen = () => {
-      socket.send(JSON.stringify({
-        type: 'join_session',
-        sessionId: sessionId
-      }));
-    };
-
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === 'roll_result') {
-        // Refresh character data when rolls are made
-        queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
-      }
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, [sessionId]);
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'roll_result') {
+      // Refresh character data when rolls are made
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+    }
+  }, [lastMessage, sessionId]);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -161,8 +157,9 @@ export default function GMDashboard() {
     },
   });
 
-  const handleGMRoll = (diceFormula: string) => {
+  const handleGMRoll = (diceFormula: string, isSecret: boolean = false) => {
     try {
+      playRoll();
       const result = rollDice(diceFormula);
       const newRoll = {
         result: result.total,
@@ -172,8 +169,19 @@ export default function GMDashboard() {
       
       setRollResults(prev => [newRoll, ...prev.slice(0, 4)]);
       
+      if (!isSecret) {
+        // Broadcast to players if not secret
+        if (isConnected) {
+          sendMessage('gm_roll', {
+            formula: diceFormula,
+            result: result.total,
+            timestamp: new Date()
+          });
+        }
+      }
+      
       toast({
-        title: "Lancé de dé",
+        title: isSecret ? "Lancé Secret" : "Lancé de dé",
         description: `${diceFormula}: ${result.total}`,
       });
     } catch (error) {
@@ -248,7 +256,8 @@ export default function GMDashboard() {
                   </span>
                 </p>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex items-center space-x-4">
+                <ConnectionIndicator isConnected={isConnected} />
                 <Button 
                   onClick={() => handleGMRoll("1d100")}
                   className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white"
@@ -378,6 +387,60 @@ export default function GMDashboard() {
           ))}
         </div>
 
+        {/* Advanced GM Tools */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          {/* Secret Roll Tool */}
+          <GMSecretRoll 
+            onRoll={(result) => {
+              handleGMRoll(result.formula, result.isSecret);
+              if (result.description) {
+                toast({
+                  title: result.isSecret ? "Jet Secret" : "Jet Public",
+                  description: `${result.description}: ${result.result}`,
+                });
+              }
+            }}
+            players={characters.map(c => ({ id: c.id, name: c.name }))}
+          />
+          
+          {/* Narrative Tools */}
+          <NarrativeTools 
+            onAmbiance={(text) => {
+              if (isConnected) {
+                sendMessage('ambiance', { text, timestamp: new Date() });
+              }
+              toast({
+                title: "Ambiance envoyée",
+                description: text.substring(0, 50) + '...',
+              });
+            }}
+            onNarration={(text) => {
+              if (isConnected) {
+                sendMessage('narration', { text, timestamp: new Date() });
+              }
+              toast({
+                title: "Narration envoyée",
+                description: text.substring(0, 50) + '...',
+              });
+            }}
+          />
+          
+          {/* Roll History */}
+          <RollHistoryVisual 
+            rolls={rollResults.map((roll, index) => ({
+              id: `${roll.timestamp.getTime()}-${index}`,
+              rollType: 'gm',
+              result: roll.result,
+              diceType: roll.dice,
+              modifier: 0,
+              createdAt: roll.timestamp,
+              success: roll.result === 1 ? 'critical' : roll.result >= 96 ? 'fumble' : null
+            }))}
+            maxItems={10}
+            className="h-full"
+          />
+        </div>
+        
         {/* GM Tools */}
         <div className="grid md:grid-cols-2 gap-8">
           {/* Quick Actions */}
@@ -461,21 +524,20 @@ export default function GMDashboard() {
                 </div>
               </div>
               
-              {/* Roll Results */}
-              <div className="space-y-2">
-                <h4 className="font-source text-sm text-aged-gold">Derniers Lancers</h4>
-                {rollResults.map((roll, index) => (
-                  <div key={index} className="bg-cosmic-void border border-aged-gold rounded p-2 text-center">
-                    <div className="text-lg font-bold text-aged-gold" data-testid={`roll-result-${index}`}>
-                      {roll.result}
+              {/* Quick Results Summary */}
+              {rollResults.length > 0 && (
+                <div className="mt-4 p-3 bg-cosmic-void border border-aged-gold rounded">
+                  <div className="text-center">
+                    <div className="text-xs text-aged-parchment mb-1">Dernier jet</div>
+                    <div className="text-2xl font-bold text-aged-gold">
+                      {rollResults[0]?.result}
                     </div>
-                    <div className="text-sm text-bone-white">{roll.dice}</div>
-                    <div className="text-xs text-aged-parchment">
-                      {roll.timestamp.toLocaleTimeString()}
+                    <div className="text-sm text-bone-white">
+                      {rollResults[0]?.dice}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

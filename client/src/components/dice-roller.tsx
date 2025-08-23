@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollDice } from "@/lib/dice";
 import { Dice6, Target, Brain, Swords } from "lucide-react";
+import { motion } from "framer-motion";
+import { useDiceSound } from "@/components/dice-sound-manager";
 import type { Character } from "@shared/schema";
 
 interface DiceRollerProps {
@@ -22,9 +24,11 @@ interface RollResult {
 
 export default function DiceRoller({ character }: DiceRollerProps) {
   const { toast } = useToast();
+  const { playRoll, playCritical, playFumble, playSuccess } = useDiceSound();
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null);
   const [customSkill, setCustomSkill] = useState("");
   const [customValue, setCustomValue] = useState<number>(50);
+  const [isRolling, setIsRolling] = useState(false);
 
   const skills = character.skills as Record<string, number> || {};
 
@@ -38,17 +42,32 @@ export default function DiceRoller({ character }: DiceRollerProps) {
     },
   });
 
-  const performSkillRoll = (skillName: string, skillValue: number) => {
+  const performSkillRoll = async (skillName: string, skillValue: number) => {
+    setIsRolling(true);
+    playRoll();
+    
+    // Animation delay pour le son
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const roll = rollDice("1d100");
     const result = roll.total;
     
     let outcome: RollResult['outcome'] = 'failure';
-    if (result <= skillValue / 5) {
+    if (result === 1) {
       outcome = 'extreme_success';
+      playCritical();
+    } else if (result >= 96) {
+      outcome = 'failure';
+      playFumble();
+    } else if (result <= skillValue / 5) {
+      outcome = 'extreme_success';
+      playSuccess();
     } else if (result <= skillValue / 2) {
       outcome = 'hard_success';
+      playSuccess();
     } else if (result <= skillValue) {
       outcome = 'success';
+      playSuccess();
     }
 
     const rollResult: RollResult = {
@@ -59,6 +78,7 @@ export default function DiceRoller({ character }: DiceRollerProps) {
     };
 
     setLastRoll(rollResult);
+    setIsRolling(false);
 
     // Record the roll
     recordRollMutation.mutate({
