@@ -1,0 +1,4 @@
+Début: Sat Aug 23 03:55:37 PM UTC 2025
+
+=== RÉSUMÉ FINAL DES TESTS END-TO-END ===
+
