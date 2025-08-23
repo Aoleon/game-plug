@@ -1,0 +1,336 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Lovecraftian color palette */
+  --cosmic-void: hsl(0, 0%, 6.7%);
+  --deep-black: hsl(0, 0%, 3.9%);
+  --blood-burgundy: hsl(0, 100%, 27.3%);
+  --dark-crimson: hsl(0, 71.4%, 15.3%);
+  --aged-gold: hsl(43, 74.4%, 49.0%);
+  --eldritch-green: hsl(120, 25.0%, 25.1%);
+  --bone-white: hsl(60, 29.4%, 96.1%);
+  --aged-parchment: hsl(45, 37.5%, 86.3%);
+  --charcoal: hsl(0, 0%, 10.9%);
+  --dark-stone: hsl(0, 0%, 17.3%);
+
+  /* Shadcn compatible colors */
+  --background: hsl(0, 0%, 3.9%);
+  --foreground: hsl(60, 29.4%, 96.1%);
+  --card: hsl(0, 0%, 10.9%);
+  --card-foreground: hsl(60, 29.4%, 96.1%);
+  --popover: hsl(0, 0%, 10.9%);
+  --popover-foreground: hsl(60, 29.4%, 96.1%);
+  --primary: hsl(43, 74.4%, 49.0%);
+  --primary-foreground: hsl(0, 0%, 3.9%);
+  --secondary: hsl(0, 0%, 17.3%);
+  --secondary-foreground: hsl(60, 29.4%, 96.1%);
+  --muted: hsl(0, 0%, 17.3%);
+  --muted-foreground: hsl(45, 37.5%, 86.3%);
+  --accent: hsl(0, 0%, 17.3%);
+  --accent-foreground: hsl(60, 29.4%, 96.1%);
+  --destructive: hsl(0, 100%, 27.3%);
+  --destructive-foreground: hsl(60, 29.4%, 96.1%);
+  --border: hsl(43, 74.4%, 49.0%);
+  --input: hsl(0, 0%, 10.9%);
+  --ring: hsl(43, 74.4%, 49.0%);
+  --chart-1: hsl(43, 74.4%, 49.0%);
+  --chart-2: hsl(120, 25.0%, 25.1%);
+  --chart-3: hsl(0, 100%, 27.3%);
+  --chart-4: hsl(0, 71.4%, 15.3%);
+  --chart-5: hsl(0, 0%, 6.7%);
+
+  /* Typography */
+  --font-cinzel: 'Cinzel', serif;
+  --font-crimson: 'Crimson Text', serif;
+  --font-source: 'Source Sans Pro', sans-serif;
+  
+  /* Border radius */
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark mode overrides (already dark by default) */
+  --background: hsl(0, 0%, 3.9%);
+  --foreground: hsl(60, 29.4%, 96.1%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-crimson antialiased;
+    font-family: var(--font-crimson);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cinzel);
+  }
+
+  .font-cinzel {
+    font-family: var(--font-cinzel);
+  }
+
+  .font-crimson {
+    font-family: var(--font-crimson);
+  }
+
+  .font-source {
+    font-family: var(--font-source);
+  }
+}
+
+@layer components {
+  /* Gothic border effect */
+  .gothic-border {
+    border-image: linear-gradient(45deg, var(--aged-gold), var(--blood-burgundy), var(--aged-gold)) 1;
+    border-width: 2px;
+    border-style: solid;
+  }
+
+  /* Parchment background gradient */
+  .parchment-bg {
+    background: linear-gradient(135deg, var(--charcoal) 0%, var(--dark-stone) 50%, var(--charcoal) 100%);
+  }
+
+  /* Eldritch glow effect */
+  .eldritch-glow {
+    box-shadow: 0 0 20px hsl(43, 74.4%, 49.0%, 0.3);
+  }
+
+  /* Critical sanity animation */
+  .sanity-critical {
+    animation: pulse 1s infinite;
+    box-shadow: 0 0 15px hsl(0, 100%, 27.3%, 0.7);
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--cosmic-void);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--aged-gold);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--blood-burgundy);
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-dice-roll {
+    animation: diceRoll 1s ease-in-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Text utilities */
+  .text-shadow-sm {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-md {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Focus styles for accessibility */
+  .focus-visible\:ring-aged-gold:focus-visible {
+    outline: 2px solid var(--aged-gold);
+    outline-offset: 2px;
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+  }
+  to { 
+    opacity: 1; 
+  }
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(20px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes diceRoll {
+  0% { 
+    transform: rotate(0deg) scale(1); 
+  }
+  25% { 
+    transform: rotate(90deg) scale(1.1); 
+  }
+  50% { 
+    transform: rotate(180deg) scale(1.2); 
+  }
+  75% { 
+    transform: rotate(270deg) scale(1.1); 
+  }
+  100% { 
+    transform: rotate(360deg) scale(1); 
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Progress bar customization */
+.progress-bar {
+  background: linear-gradient(90deg, var(--eldritch-green), var(--aged-gold), var(--blood-burgundy));
+  transition: width 0.3s ease-in-out;
+}
+
+/* Button hover states */
+.btn-primary {
+  background: var(--blood-burgundy);
+  color: var(--bone-white);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background: var(--dark-crimson);
+  box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3);
+}
+
+.btn-secondary {
+  background: var(--eldritch-green);
+  color: var(--bone-white);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background: hsl(120, 25.0%, 20.1%);
+  box-shadow: 0 4px 8px rgba(47, 79, 47, 0.3);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(218, 165, 32, 0.2);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  .responsive-title {
+    font-size: 2rem;
+    line-height: 2.25rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .responsive-title {
+    font-size: 3rem;
+    line-height: 3.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-title {
+    font-size: 4rem;
+    line-height: 4.25rem;
+  }
+}
+
+/* Loading spinner */
+.loading-spinner {
+  border: 2px solid var(--charcoal);
+  border-top: 2px solid var(--aged-gold);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error state styles */
+.error-text {
+  color: var(--blood-burgundy);
+  font-weight: 500;
+}
+
+.error-border {
+  border-color: var(--blood-burgundy);
+}
+
+/* Success state styles */
+.success-text {
+  color: var(--eldritch-green);
+  font-weight: 500;
+}
+
+.success-border {
+  border-color: var(--eldritch-green);
+}
+
+/* Warning state styles */
+.warning-text {
+  color: var(--aged-gold);
+  font-weight: 500;
+}
+
+.warning-border {
+  border-color: var(--aged-gold);
+}
