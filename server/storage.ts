@@ -31,6 +31,7 @@ export interface IStorage {
   getGameSession(id: string): Promise<GameSession | undefined>;
   getGameSessionsByGM(gmId: string): Promise<GameSession[]>;
   updateGameSession(id: string, data: Partial<InsertGameSession>): Promise<GameSession>;
+  deleteGameSession(id: string): Promise<void>;
   
   // Character operations
   createCharacter(character: InsertCharacter): Promise<Character>;
@@ -109,6 +110,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(gameSessions.id, id))
       .returning();
     return session;
+  }
+
+  async deleteGameSession(id: string): Promise<void> {
+    // Delete all related data first
+    const characters = await this.getCharactersBySession(id);
+    for (const character of characters) {
+      await db.delete(sanityConditions).where(eq(sanityConditions.characterId, character.id));
+      await db.delete(activeEffects).where(eq(activeEffects.characterId, character.id));
+      await db.delete(rollHistory).where(eq(rollHistory.characterId, character.id));
+    }
+    await db.delete(characters).where(eq(characters.sessionId, id));
+    await db.delete(rollHistory).where(eq(rollHistory.sessionId, id));
+    await db.delete(gameSessions).where(eq(gameSessions.id, id));
   }
 
   // Character operations

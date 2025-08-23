@@ -67,6 +67,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getGameSession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const updatedSession = await storage.updateGameSession(req.params.id, req.body);
+      res.json(updatedSession);
+    } catch (error) {
+      console.error("Error updating session:", error);
+      res.status(500).json({ message: "Failed to update session" });
+    }
+  });
+
+  app.delete('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getGameSession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.deleteGameSession(req.params.id);
+      res.json({ message: "Session deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
   app.get('/api/sessions/:id/characters', isAuthenticated, async (req, res) => {
     try {
       const characters = await storage.getCharactersBySession(req.params.id);

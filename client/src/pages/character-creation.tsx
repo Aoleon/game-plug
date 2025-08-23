@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import Navigation from "@/components/navigation";
@@ -10,18 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
 import { OCCUPATIONS, DEFAULT_SKILLS } from "@/lib/cthulhu-data";
-import { Dice6, Wand2, Save, X } from "lucide-react";
-import type { InsertCharacter } from "@shared/schema";
+import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { InsertCharacter, GameSession } from "@shared/schema";
 
 const characterCreationSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   occupation: z.string().min(1, "Veuillez sélectionner une occupation"),
-  age: z.number().min(15).max(99),
+  age: z.coerce.number().min(15, "L'âge minimum est 15 ans").max(99, "L'âge maximum est 99 ans"),
   birthplace: z.string().optional(),
   residence: z.string().optional(),
   gender: z.string().optional(),
@@ -37,6 +40,14 @@ export default function CharacterCreation() {
   const [characteristics, setCharacteristics] = useState(rollCharacteristics());
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [selectedOccupation, setSelectedOccupation] = useState<string>("");
+  const [skillPoints, setSkillPoints] = useState<Record<string, number>>({});
+
+  // Fetch available sessions
+  const { data: sessions = [], isLoading: sessionsLoading } = useQuery<GameSession[]>({
+    queryKey: ["/api/sessions"],
+    retry: false,
+  });
 
   const form = useForm<CharacterCreationForm>({
     resolver: zodResolver(characterCreationSchema),
@@ -47,14 +58,19 @@ export default function CharacterCreation() {
       birthplace: "",
       residence: "",
       gender: "",
-      sessionId: "temp-session", // This would come from URL params or session selection
+      sessionId: "", // Will be selected by user
       avatarDescription: "",
     },
   });
 
   const createCharacterMutation = useMutation({
     mutationFn: async (data: InsertCharacter) => {
-      const response = await apiRequest("POST", "/api/characters", data);
+      const response = await fetch("/api/characters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to create character");
       return response.json();
     },
     onSuccess: (character) => {
@@ -76,10 +92,12 @@ export default function CharacterCreation() {
 
   const generateAvatarMutation = useMutation({
     mutationFn: async ({ characterId, description, name }: { characterId: string, description: string, name: string }) => {
-      const response = await apiRequest("POST", `/api/characters/${characterId}/generate-avatar`, {
-        description,
-        characterName: name,
+      const response = await fetch(`/api/characters/${characterId}/generate-avatar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, characterName: name })
       });
+      if (!response.ok) throw new Error("Failed to generate avatar");
       return response.json();
     },
     onSuccess: (data) => {

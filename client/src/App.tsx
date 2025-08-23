@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import CharacterCreation from "@/pages/character-creation";
 import CharacterSheet from "@/pages/character-sheet";
 import GMDashboard from "@/pages/gm-dashboard";
+import SessionManager from "@/pages/session-manager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
           <Route path="/create-character" component={CharacterCreation} />
           <Route path="/character/:id" component={CharacterSheet} />
           <Route path="/gm/:sessionId" component={GMDashboard} />
+          <Route path="/sessions" component={SessionManager} />
         </>
       )}
       <Route component={NotFound} />

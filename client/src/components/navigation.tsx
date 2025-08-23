@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Eye, User, Users, LogOut } from "lucide-react";
+import { Eye, User, Users, LogOut, Settings } from "lucide-react";
 
 export default function Navigation() {
   const { user } = useAuth();
@@ -35,6 +35,18 @@ export default function Navigation() {
                     Joueur
                   </Button>
                 </Link>
+                <Link href="/sessions">
+                  <Button
+                    variant="ghost"
+                    className={`text-bone-white hover:text-aged-gold transition-colors ${
+                      location === '/sessions' ? 'bg-aged-gold text-deep-black' : ''
+                    }`}
+                    data-testid="nav-button-sessions"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Sessions
+                  </Button>
+                </Link>
                 {/* GM button would typically link to a session selection or recent session */}
                 <Button
                   variant="ghost"
@@ -42,6 +54,8 @@ export default function Navigation() {
                     isGMView ? 'bg-aged-gold text-deep-black' : ''
                   }`}
                   data-testid="nav-button-gm"
+                  disabled={true}
+                  title="Sélectionnez une session d'abord"
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   Maître de Jeu
@@ -100,12 +114,28 @@ export default function Navigation() {
             </Button>
           </Link>
           
+          <Link href="/sessions" className="flex-1">
+            <Button
+              variant="ghost"
+              className={`w-full py-3 text-center text-bone-white hover:text-aged-gold transition-colors ${
+                location === '/sessions' ? 'bg-aged-gold text-deep-black' : ''
+              }`}
+              data-testid="mobile-nav-sessions"
+            >
+              <div className="flex flex-col items-center">
+                <Settings className="h-4 w-4 mb-1" />
+                <span className="text-xs">Sessions</span>
+              </div>
+            </Button>
+          </Link>
+          
           <Button
             variant="ghost"
             className={`flex-1 py-3 text-center text-bone-white hover:text-aged-gold transition-colors ${
               isGMView ? 'bg-aged-gold text-deep-black' : ''
             }`}
             data-testid="mobile-nav-gm"
+            disabled={true}
           >
             <div className="flex flex-col items-center">
               <Eye className="h-4 w-4 mb-1" />

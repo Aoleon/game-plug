@@ -8,7 +8,7 @@ import Navigation from "@/components/navigation";
 import CharacterCard from "@/components/character-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Eye, Users, Scroll } from "lucide-react";
+import { Plus, Eye, Users, Scroll, Settings } from "lucide-react";
 import type { Character, GameSession } from "@shared/schema";
 
 export default function Home() {
@@ -126,9 +126,19 @@ export default function Home() {
                   <h3 className="font-cinzel text-lg text-aged-gold mb-2">
                     Aucune Session
                   </h3>
-                  <p className="text-aged-parchment text-sm font-source">
+                  <p className="text-aged-parchment text-sm font-source mb-4">
                     Vous n'avez pas encore créé de session de jeu.
                   </p>
+                  <Link href="/sessions">
+                    <Button 
+                      size="sm"
+                      className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white"
+                      data-testid="button-create-first-session"
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      Créer une Session
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ) : (
@@ -171,6 +181,15 @@ export default function Home() {
                 <CardTitle className="font-cinzel text-aged-gold">Actions Rapides</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                <Link href="/sessions">
+                  <Button 
+                    className="w-full bg-blood-burgundy hover:bg-dark-crimson text-bone-white"
+                    data-testid="button-manage-sessions"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Gérer les Sessions
+                  </Button>
+                </Link>
                 <Button 
                   className="w-full bg-eldritch-green hover:bg-green-800 text-bone-white justify-start"
                   data-testid="button-create-session"
