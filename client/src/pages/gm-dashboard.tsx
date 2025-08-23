@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, queryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollDice, parseDiceFormula } from "@/lib/dice";
 import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { 
