@@ -12,7 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck, Image, Sparkles } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -34,7 +37,6 @@ interface InventoryItem {
 interface CharacterWithDetails extends Character {
   sanityConditions: SanityCondition[];
   activeEffects: ActiveEffect[];
-  notes?: string | null;
 }
 
 export default function CharacterSheet() {
@@ -57,6 +59,21 @@ export default function CharacterSheet() {
     weight: 1,
     damage: '',
     armor: 0
+  });
+  
+  // Avatar customization states
+  const [showAvatarDialog, setShowAvatarDialog] = useState(false);
+  const [avatarSettings, setAvatarSettings] = useState({
+    gender: 'male',
+    age: 'adult',
+    hairColor: 'brown',
+    eyeColor: 'brown',
+    height: 'average',
+    build: 'average',
+    skinTone: 'fair',
+    facialHair: 'none',
+    distinctiveFeatures: '',
+    clothing: 'formal'
   });
 
   // Players don't need to be authenticated to view their character sheet
@@ -214,7 +231,7 @@ export default function CharacterSheet() {
     }
   };
 
-  const handleGenerateAvatar = async () => {
+  const handleGenerateAvatar = async (useCustomSettings = false) => {
     setIsGeneratingAvatar(true);
     toast({
       title: "Génération en cours",
@@ -223,10 +240,44 @@ export default function CharacterSheet() {
     
     try {
       console.log("Starting avatar generation for character:", characterId);
+      
+      let body = {};
+      if (useCustomSettings && character) {
+        // Build description from custom settings
+        const genderMap: Record<string, string> = { male: "homme", female: "femme", other: "personne" };
+        const ageMap: Record<string, string> = { young: "jeune", adult: "adulte", middle: "d'âge mûr", elderly: "âgé" };
+        const heightMap: Record<string, string> = { short: "petit", average: "taille moyenne", tall: "grand" };
+        const buildMap: Record<string, string> = { slim: "mince", average: "corpulence moyenne", athletic: "athlétique", heavy: "corpulent" };
+        const skinMap: Record<string, string> = { pale: "peau pâle", fair: "peau claire", medium: "peau mate", tan: "peau bronzée", dark: "peau foncée" };
+        const hairMap: Record<string, string> = { black: "cheveux noirs", brown: "cheveux bruns", blonde: "cheveux blonds", red: "cheveux roux", gray: "cheveux gris", white: "cheveux blancs" };
+        const eyeMap: Record<string, string> = { brown: "yeux marrons", blue: "yeux bleus", green: "yeux verts", gray: "yeux gris", hazel: "yeux noisette" };
+        const clothingMap: Record<string, string> = { formal: "vêtements formels années 1920", casual: "vêtements décontractés", work: "vêtements de travail", military: "uniforme militaire", academic: "tenue académique" };
+        
+        let description = `Portrait années 1920, ${genderMap[avatarSettings.gender]}, ${ageMap[avatarSettings.age]}, `;
+        description += `${heightMap[avatarSettings.height]}, ${buildMap[avatarSettings.build]}, `;
+        description += `${skinMap[avatarSettings.skinTone]}, ${hairMap[avatarSettings.hairColor]}, ${eyeMap[avatarSettings.eyeColor]}, `;
+        
+        if (avatarSettings.facialHair !== 'none' && avatarSettings.gender === 'male') {
+          const facialHairMap: Record<string, string> = { mustache: "moustache", beard: "barbe", goatee: "bouc", sideburns: "favoris" };
+          description += `${facialHairMap[avatarSettings.facialHair]}, `;
+        }
+        
+        description += `${clothingMap[avatarSettings.clothing]}`;
+        
+        if (avatarSettings.distinctiveFeatures) {
+          description += `, ${avatarSettings.distinctiveFeatures}`;
+        }
+        
+        description += `, ${character.occupation}, style portrait photographique d'époque, sépia`;
+        
+        body = { customDescription: description };
+      }
+      
       const response = await fetch(`/api/characters/${characterId}/generate-avatar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify(body),
       });
       
       console.log("Response status:", response.status);
@@ -249,6 +300,10 @@ export default function CharacterSheet() {
         // Force refresh character data to show new avatar
         await queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
         await queryClient.refetchQueries({ queryKey: ["/api/characters", characterId] });
+        
+        if (useCustomSettings) {
+          setShowAvatarDialog(false);
+        }
       } else {
         throw new Error("Aucune URL de portrait reçue");
       }
@@ -437,16 +492,26 @@ export default function CharacterSheet() {
                     </div>
                   )}
                 </div>
-                <Button
-                  onClick={handleGenerateAvatar}
-                  disabled={isGeneratingAvatar}
-                  className="bg-eldritch-green hover:bg-green-800 text-bone-white"
-                  size="sm"
-                  data-testid="button-regenerate-avatar"
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${isGeneratingAvatar ? 'animate-spin' : ''}`} />
-                  {isGeneratingAvatar ? "Génération..." : "Générer Portrait"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowAvatarDialog(true)}
+                    className="bg-aged-gold hover:bg-aged-gold/80 text-deep-black"
+                    size="sm"
+                    data-testid="button-customize-avatar"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Personnaliser
+                  </Button>
+                  <Button
+                    onClick={() => handleGenerateAvatar()}
+                    disabled={isGeneratingAvatar}
+                    className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                    size="sm"
+                    data-testid="button-regenerate-avatar"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isGeneratingAvatar ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </div>
 
               {/* Basic Info */}
@@ -1068,6 +1133,201 @@ export default function CharacterSheet() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Avatar Customization Dialog */}
+        <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
+          <DialogContent className="bg-charcoal border-aged-gold max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <Image className="h-5 w-5" />
+                Personnaliser le portrait
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-aged-parchment">Genre</label>
+                  <Select value={avatarSettings.gender} onValueChange={(value) => setAvatarSettings({...avatarSettings, gender: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="male">Homme</SelectItem>
+                      <SelectItem value="female">Femme</SelectItem>
+                      <SelectItem value="other">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Âge</label>
+                  <Select value={avatarSettings.age} onValueChange={(value) => setAvatarSettings({...avatarSettings, age: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="young">Jeune (18-25)</SelectItem>
+                      <SelectItem value="adult">Adulte (26-40)</SelectItem>
+                      <SelectItem value="middle">Âge mûr (41-60)</SelectItem>
+                      <SelectItem value="elderly">Âgé (60+)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Couleur des cheveux</label>
+                  <Select value={avatarSettings.hairColor} onValueChange={(value) => setAvatarSettings({...avatarSettings, hairColor: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="black">Noir</SelectItem>
+                      <SelectItem value="brown">Brun</SelectItem>
+                      <SelectItem value="blonde">Blond</SelectItem>
+                      <SelectItem value="red">Roux</SelectItem>
+                      <SelectItem value="gray">Gris</SelectItem>
+                      <SelectItem value="white">Blanc</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Couleur des yeux</label>
+                  <Select value={avatarSettings.eyeColor} onValueChange={(value) => setAvatarSettings({...avatarSettings, eyeColor: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="brown">Marron</SelectItem>
+                      <SelectItem value="blue">Bleu</SelectItem>
+                      <SelectItem value="green">Vert</SelectItem>
+                      <SelectItem value="gray">Gris</SelectItem>
+                      <SelectItem value="hazel">Noisette</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Taille</label>
+                  <Select value={avatarSettings.height} onValueChange={(value) => setAvatarSettings({...avatarSettings, height: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="short">Petit</SelectItem>
+                      <SelectItem value="average">Moyen</SelectItem>
+                      <SelectItem value="tall">Grand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Corpulence</label>
+                  <Select value={avatarSettings.build} onValueChange={(value) => setAvatarSettings({...avatarSettings, build: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="slim">Mince</SelectItem>
+                      <SelectItem value="average">Moyenne</SelectItem>
+                      <SelectItem value="athletic">Athlétique</SelectItem>
+                      <SelectItem value="heavy">Corpulent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Teint</label>
+                  <Select value={avatarSettings.skinTone} onValueChange={(value) => setAvatarSettings({...avatarSettings, skinTone: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="pale">Pâle</SelectItem>
+                      <SelectItem value="fair">Clair</SelectItem>
+                      <SelectItem value="medium">Mat</SelectItem>
+                      <SelectItem value="tan">Bronzé</SelectItem>
+                      <SelectItem value="dark">Foncé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {avatarSettings.gender === 'male' && (
+                  <div>
+                    <label className="text-sm text-aged-parchment">Pilosité faciale</label>
+                    <Select value={avatarSettings.facialHair} onValueChange={(value) => setAvatarSettings({...avatarSettings, facialHair: value})}>
+                      <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-charcoal border-aged-gold">
+                        <SelectItem value="none">Aucune</SelectItem>
+                        <SelectItem value="mustache">Moustache</SelectItem>
+                        <SelectItem value="beard">Barbe</SelectItem>
+                        <SelectItem value="goatee">Bouc</SelectItem>
+                        <SelectItem value="sideburns">Favoris</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="text-sm text-aged-parchment">Style vestimentaire</label>
+                  <Select value={avatarSettings.clothing} onValueChange={(value) => setAvatarSettings({...avatarSettings, clothing: value})}>
+                    <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="formal">Formel</SelectItem>
+                      <SelectItem value="casual">Décontracté</SelectItem>
+                      <SelectItem value="work">Travail</SelectItem>
+                      <SelectItem value="military">Militaire</SelectItem>
+                      <SelectItem value="academic">Académique</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm text-aged-parchment">Traits distinctifs (optionnel)</label>
+                <Textarea
+                  placeholder="Ex: cicatrice sur la joue, lunettes rondes, chapeau melon..."
+                  value={avatarSettings.distinctiveFeatures}
+                  onChange={(e) => setAvatarSettings({...avatarSettings, distinctiveFeatures: e.target.value})}
+                  className="bg-cosmic-void border-aged-gold text-bone-white"
+                  rows={2}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAvatarDialog(false)}
+                  className="border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => handleGenerateAvatar(true)}
+                  disabled={isGeneratingAvatar}
+                  className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                >
+                  {isGeneratingAvatar ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Générer le portrait
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
