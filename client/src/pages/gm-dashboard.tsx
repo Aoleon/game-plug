@@ -9,6 +9,7 @@ import Navigation from "@/components/navigation";
 import ConnectionIndicator from "@/components/connection-indicator";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
+import BuffManager from "@/components/buff-manager";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { ChapterManagerWithHistory } from "@/components/chapter-manager";
@@ -889,7 +890,7 @@ export default function GMDashboard() {
         </div>
 
         {/* Advanced GM Tools */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Roll Tool with Effects */}
           <GMRollWithEffects
             characters={characters}
@@ -897,6 +898,43 @@ export default function GMDashboard() {
             onApplyEffect={applyEffectToCharacters}
           />
           
+          {/* Buff Manager */}
+          <BuffManager
+            characters={characters}
+            onApplyBuff={async (buff) => {
+              // Apply buff to selected characters
+              for (const charId of buff.characterIds) {
+                const character = characters.find(c => c.id === charId);
+                if (character) {
+                  await apiRequest("POST", `/api/characters/${charId}/effects`, {
+                    name: buff.name,
+                    type: buff.type,
+                    value: buff.value.toString(),
+                    duration: buff.duration || 0,
+                    description: buff.description
+                  });
+                  
+                  // Send real-time update
+                  if (isConnected) {
+                    sendMessage('buff_applied', {
+                      characterId: charId,
+                      characterName: character.name,
+                      buffName: buff.name,
+                      value: buff.value,
+                      description: buff.description
+                    });
+                  }
+                }
+              }
+              
+              // Refresh character data
+              queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+            }}
+          />
+        </div>
+        
+        {/* Narrative and History Tools */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Narrative Tools */}
           <NarrativeTools 
             onAmbiance={async (text) => {

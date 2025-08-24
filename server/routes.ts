@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription } from "./openai";
 import { migrateExistingAvatars } from "./migrate-avatars";
 import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
+import { applyHealing, applySanityRecovery, applyMagicRecovery, applyLuckBoost, applySkillBonus } from "./buff-logic";
 import {
   insertGameSessionSchema,
   insertCharacterSchema,
@@ -880,27 +881,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await applyTemporaryInsanity(character.id);
           }
         } else if (effectData.type === 'buff') {
-          // Handle buffs based on the effect name
+          // Handle buffs using dedicated functions
+          const buffValue = Math.abs(value);
+          const duration = effectData.duration || 0;
+          
+          // Determine buff type from name or metadata
           if (effectData.name?.toLowerCase().includes('soin') || 
               effectData.name?.toLowerCase().includes('heal') ||
+              effectData.name?.toLowerCase().includes('premiers soins') ||
+              effectData.name?.toLowerCase().includes('traitement') ||
+              effectData.name?.toLowerCase().includes('chirurgie') ||
               effectData.name?.toLowerCase().includes('pv') ||
               effectData.name?.toLowerCase().includes('vie')) {
-            // Healing buff - add HP
-            updateData.hitPoints = Math.min(character.maxHitPoints, character.hitPoints + Math.abs(value));
+            // Use dedicated healing function
+            const result = await applyHealing(character, buffValue, effectData.name);
+            console.log(`Applied healing: +${result.amountHealed} HP to ${character.name}`);
             shouldApplyAutoEffects = true;
+            // No need to update character here, applyHealing does it
+            updateData = {}; 
           } else if (effectData.name?.toLowerCase().includes('sanité') || 
-                     effectData.name?.toLowerCase().includes('sanity')) {
-            // Sanity restoration
-            updateData.sanity = Math.min(character.maxSanity, character.sanity + Math.abs(value));
+                     effectData.name?.toLowerCase().includes('sanity') ||
+                     effectData.name?.toLowerCase().includes('thérapie') ||
+                     effectData.name?.toLowerCase().includes('réconfort') ||
+                     effectData.name?.toLowerCase().includes('psychanalyse')) {
+            // Use dedicated sanity recovery function
+            const result = await applySanityRecovery(character, buffValue, effectData.name);
+            console.log(`Applied sanity recovery: +${result.amountRecovered} SAN to ${character.name}`);
             shouldApplyAutoEffects = true;
+            updateData = {};
           } else if (effectData.name?.toLowerCase().includes('magie') || 
-                     effectData.name?.toLowerCase().includes('magic')) {
-            // Magic points restoration
-            updateData.magicPoints = Math.min(character.maxMagicPoints, character.magicPoints + Math.abs(value));
+                     effectData.name?.toLowerCase().includes('magic') ||
+                     effectData.name?.toLowerCase().includes('méditation') ||
+                     effectData.name?.toLowerCase().includes('repos rituel')) {
+            // Use dedicated magic recovery function
+            const result = await applyMagicRecovery(character, buffValue, effectData.name);
+            console.log(`Applied magic recovery: +${result.amountRecovered} MP to ${character.name}`);
+            updateData = {};
           } else if (effectData.name?.toLowerCase().includes('chance') || 
-                     effectData.name?.toLowerCase().includes('luck')) {
-            // Luck increase (temporary)
-            updateData.luck = Math.min(99, character.luck + Math.abs(value));
+                     effectData.name?.toLowerCase().includes('luck') ||
+                     effectData.name?.toLowerCase().includes('bénédiction')) {
+            // Use dedicated luck boost function
+            const result = await applyLuckBoost(character, buffValue, duration, effectData.name);
+            console.log(`Applied luck boost: +${result.amountIncreased} Luck to ${character.name}`);
+            updateData = {};
+          } else if (effectData.name?.toLowerCase().includes('compétence') || 
+                     effectData.name?.toLowerCase().includes('skill') ||
+                     effectData.name?.toLowerCase().includes('inspiration') ||
+                     effectData.name?.toLowerCase().includes('bonus')) {
+            // Use dedicated skill bonus function
+            await applySkillBonus(character, buffValue, duration, effectData.name);
+            console.log(`Applied skill bonus: +${buffValue}% to ${character.name}`);
+            updateData = {};
+          } else {
+            // Generic buff - just record the effect
+            const addedEffect = await storage.addActiveEffect(effectData);
+            console.log(`Applied generic buff: ${effectData.name} to ${character.name}`);
+            res.json(addedEffect);
+            return;
           }
         }
         
