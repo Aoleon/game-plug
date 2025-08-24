@@ -47,10 +47,26 @@ export default function CharacterSheet() {
 
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);
+    toast({
+      title: "Génération en cours",
+      description: "Création de votre portrait personnalisé...",
+    });
+    
     try {
       console.log("Starting avatar generation for character:", characterId);
-      const response = await apiRequest("POST", `/api/characters/${characterId}/generate-avatar`);
-      console.log("Response received:", response);
+      const response = await fetch(`/api/characters/${characterId}/generate-avatar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      }
       
       const data = await response.json();
       console.log("Avatar generation response:", data);
@@ -65,12 +81,19 @@ export default function CharacterSheet() {
         await queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
         await queryClient.refetchQueries({ queryKey: ["/api/characters", characterId] });
       } else {
-        throw new Error("No avatar URL received");
+        throw new Error("Aucune URL de portrait reçue");
       }
       
     } catch (error: any) {
       console.error("Error generating avatar:", error);
-      const errorMessage = error.message || "Impossible de générer le portrait.";
+      let errorMessage = "Impossible de générer le portrait.";
+      
+      if (error.message.includes("500") || error.message.includes("Failed")) {
+        errorMessage = "Erreur lors de la génération. Veuillez réessayer dans quelques instants.";
+      } else if (error.message.includes("401")) {
+        errorMessage = "Erreur d'authentification. Veuillez rafraîchir la page.";
+      }
+      
       toast({
         title: "Erreur",
         description: errorMessage,
@@ -246,10 +269,7 @@ export default function CharacterSheet() {
                   )}
                 </div>
                 <Button
-                  onClick={() => {
-                    console.log("Button clicked!");
-                    handleGenerateAvatar();
-                  }}
+                  onClick={handleGenerateAvatar}
                   disabled={isGeneratingAvatar}
                   className="bg-eldritch-green hover:bg-green-800 text-bone-white"
                   size="sm"
