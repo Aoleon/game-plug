@@ -339,14 +339,18 @@ export default function CharacterCreation() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
       
-      // Clear session creation flag if it was set
+      // Also invalidate session characters if created for a session
       if (sessionFromStorage) {
+        queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionFromStorage, "characters"] });
         localStorage.removeItem('createCharacterForSession');
         localStorage.setItem('currentCharacterId', character.id);
         localStorage.setItem('currentCharacterName', character.name);
+        // Navigate to character sheet
+        setLocation(`/character/${character.id}`);
+      } else {
+        // If not from a session, navigate to the character sheet
+        setLocation(`/character/${character.id}`);
       }
-      
-      setLocation(`/character/${character.id}`);
     },
     onError: (error) => {
       console.error("Character creation error:", error);
