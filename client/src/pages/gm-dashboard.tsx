@@ -264,7 +264,8 @@ export default function GMDashboard() {
   const handleGenerateAllAvatars = async () => {
     setIsGeneratingAvatars(true);
     try {
-      const data = await apiRequest("POST", `/api/sessions/${sessionId}/generate-all-avatars`);
+      const response = await apiRequest("POST", `/api/sessions/${sessionId}/generate-all-avatars`);
+      const data = await response.json();
       
       if (data.generated > 0) {
         toast({
