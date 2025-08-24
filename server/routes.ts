@@ -430,6 +430,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update character notes
+  app.patch('/api/characters/:id/notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { notes } = req.body;
+      const characterId = req.params.id;
+      
+      // Get the character to check ownership
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if the user owns the character or is the GM
+      const session = await storage.getGameSession(character.sessionId);
+      const isGM = session && session.gmId === userId;
+      const isOwner = character.userId === userId;
+      
+      if (!isOwner && !isGM) {
+        return res.status(403).json({ message: "You don't have permission to edit these notes" });
+      }
+      
+      // Update only the notes field
+      const updatedCharacter = await storage.updateCharacter(characterId, { notes });
+      
+      res.json({ notes: updatedCharacter.notes });
+    } catch (error) {
+      console.error("Error updating character notes:", error);
+      res.status(500).json({ message: "Failed to update notes" });
+    }
+  });
+
   // Simple avatar generation without character ID requirement
   app.post('/api/generate-avatar', isAuthenticated, async (req, res) => {
     try {

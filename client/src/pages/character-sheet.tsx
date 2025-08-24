@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -20,6 +20,7 @@ import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 interface CharacterWithDetails extends Character {
   sanityConditions: SanityCondition[];
   activeEffects: ActiveEffect[];
+  notes?: string | null;
 }
 
 export default function CharacterSheet() {
@@ -29,6 +30,9 @@ export default function CharacterSheet() {
   const { isAuthenticated, isLoading } = useAuth();
   const [rollHistory, setRollHistory] = useState<any[]>([]);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+  const [notes, setNotes] = useState<string>("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [notesModified, setNotesModified] = useState(false);
 
   // Players don't need to be authenticated to view their character sheet
   // They just need to have joined a session
@@ -47,6 +51,48 @@ export default function CharacterSheet() {
   
   // Filter rolls for this specific character
   const characterRolls = sessionRolls?.filter(roll => roll.characterId === characterId) || [];
+  
+  // Initialize notes when character data is loaded
+  useEffect(() => {
+    if (character?.notes) {
+      setNotes(character.notes);
+    }
+  }, [character?.notes]);
+  
+  // Save notes function
+  const saveNotes = async () => {
+    if (!notesModified || !characterId) return;
+    
+    setIsSavingNotes(true);
+    try {
+      await apiRequest("PATCH", `/api/characters/${characterId}/notes`, { notes });
+      setNotesModified(false);
+      toast({
+        title: "Notes sauvegardées",
+        description: "Vos notes ont été enregistrées avec succès.",
+      });
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder les notes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+  
+  // Auto-save notes after 2 seconds of inactivity
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (notesModified) {
+        saveNotes();
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [notes, notesModified]);
 
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);
@@ -602,6 +648,56 @@ export default function CharacterSheet() {
               {(!characterRolls || characterRolls.length === 0) && character.activeEffects.length === 0 && (
                 <p className="text-aged-parchment text-center">Aucun historique disponible</p>
               )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Personal Notes Section */}
+        <div className="mt-8">
+          <Card className="bg-charcoal border-aged-gold parchment-bg">
+            <CardHeader>
+              <CardTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Notes Personnelles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="relative">
+                  <textarea
+                    value={notes}
+                    onChange={(e) => {
+                      setNotes(e.target.value);
+                      setNotesModified(true);
+                    }}
+                    placeholder="Écrivez vos notes ici... Indices, mystères, objectifs, rencontres importantes..."
+                    className="w-full min-h-[200px] p-4 bg-cosmic-void border border-aged-gold rounded-lg text-bone-white placeholder-aged-parchment/50 resize-y focus:outline-none focus:border-aged-gold/70"
+                    data-testid="textarea-character-notes"
+                  />
+                  {notesModified && (
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        size="sm"
+                        onClick={saveNotes}
+                        disabled={isSavingNotes}
+                        className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                        data-testid="button-save-notes"
+                      >
+                        {isSavingNotes ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        <span className="ml-2">Sauvegarder</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-aged-parchment text-sm">
+                  Ces notes sont privées et ne sont visibles que par vous et le Maître de Jeu.
+                  Sauvegarde automatique après 2 secondes d'inactivité.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
