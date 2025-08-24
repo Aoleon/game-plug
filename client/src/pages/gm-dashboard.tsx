@@ -221,11 +221,9 @@ export default function GMDashboard() {
 
   const handleRollWithEffects = async (result: any) => {
     // Handle the roll results
-    const rollEntries = Array.from(result.results.entries());
+    const rollEntries = Array.from(result.results.entries()) as [string, number][];
     
-    for (const entry of rollEntries) {
-      const charId = entry[0] as string;
-      const value = entry[1] as number;
+    for (const [charId, value] of rollEntries) {
       const character = characters.find(c => c.id === charId);
       if (character) {
         const newRoll = {

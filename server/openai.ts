@@ -18,29 +18,17 @@ export async function generateCharacterAvatar(
   const basePrompt = `Professional studio portrait photograph from 1920s New England. ${characterName}, ${ageContext}${occupationContext}an investigator of the unknown. ${description}`;
   
   const styleDetails = `
-Photography style: Vintage 1920s studio portrait with dramatic chiaroscuro lighting, deep shadows and highlights that suggest mystery and foreboding. Sepia-toned or rich black and white with excellent contrast.
-
-Setting: Elegant but slightly unsettling 1920s interior - dark wood paneling, antique furniture, perhaps old books or mysterious artifacts subtly visible in the background.
-
-Mood: Sophisticated yet haunted - the subject should have an intelligent, contemplative expression with a hint of someone who has seen things beyond normal understanding. Eyes that suggest depth of knowledge and perhaps a touch of unease.
-
-Clothing: Meticulously period-accurate 1920s attire - three-piece suits with waistcoats for men, elegant dresses or professional attire for women. Rich fabrics, proper tailoring, authentic accessories like pocket watches, brooches, or distinctive eyewear.
-
-Quality: Hyperrealistic, museum-quality portrait that could have been taken by the finest photographers of the era. Sharp focus on the subject with beautiful depth of field.
-
-Atmosphere: Subtly gothic and mysterious without being overtly supernatural - the kind of person who might investigate strange occurrences in Arkham or Dunwich.
-
-Avoid: Any modern elements, bright cheerful lighting, contemporary clothing, digital artifacts, overly dramatic poses.`;
+Vintage 1920s portrait photograph with dramatic noir lighting. ${occupation ? `Dressed as a ${occupation}. ` : ''}Period-accurate 1920s attire, mysterious atmosphere suggesting someone who investigates the unknown. Dark, gothic mood with deep shadows. Professional studio quality, sepia-toned or black and white.`;
 
   const fullPrompt = `${basePrompt}\n\n${styleDetails}`;
 
   try {
     const response = await openai.images.generate({
-      model: "dall-e-3", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "dall-e-3",
       prompt: fullPrompt,
       n: 1,
-      size: "1024x1024",
-      quality: "hd", // Use HD quality for better results
+      size: "512x512", // Reduced size for faster generation
+      quality: "standard", // Standard quality for much faster generation (2-3x faster)
     });
 
     return { url: response.data?.[0]?.url || "" };
