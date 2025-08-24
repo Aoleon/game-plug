@@ -245,6 +245,15 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newEffect;
   }
+  
+  async addActiveEffects(effects: InsertActiveEffect[]): Promise<ActiveEffect[]> {
+    if (effects.length === 0) return [];
+    const newEffects = await db
+      .insert(activeEffects)
+      .values(effects)
+      .returning();
+    return newEffects;
+  }
 
   async getCharacterActiveEffects(characterId: string): Promise<ActiveEffect[]> {
     return await db

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription } from "./openai";
+import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
 import {
   insertGameSessionSchema,
   insertCharacterSchema,
@@ -377,7 +378,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const updateData = req.body;
       const character = await storage.updateCharacter(req.params.id, updateData);
-      res.json(character);
+      
+      // Apply automatic status effects if HP or Sanity changed
+      if (updateData.hitPoints !== undefined || updateData.sanity !== undefined) {
+        await applyAutomaticStatusEffects({
+          characterId: character.id,
+          currentHp: character.hitPoints,
+          maxHp: character.maxHitPoints,
+          currentSanity: character.sanity,
+          maxSanity: character.maxSanity,
+          strength: character.strength,
+          constitution: character.constitution,
+          size: character.size
+        });
+      }
+      
+      // Fetch updated effects
+      const [sanityConditions, activeEffects] = await Promise.all([
+        storage.getCharacterSanityConditions(character.id),
+        storage.getCharacterActiveEffects(character.id)
+      ]);
+      
+      res.json({ ...character, sanityConditions, activeEffects });
     } catch (error) {
       console.error("Error updating character:", error);
       res.status(400).json({ message: "Failed to update character" });
@@ -461,6 +483,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         appliedBy: req.user.claims.sub
       });
       const effect = await storage.addActiveEffect(effectData);
+      
+      // If effect is damage or sanity loss, update character and apply automatic statuses
+      const character = await storage.getCharacter(req.params.id);
+      if (character && (effectData.type === 'damage' || effectData.type === 'sanity_loss')) {
+        const value = parseInt(effectData.value || '0');
+        
+        if (effectData.type === 'damage' && value !== 0) {
+          // Apply damage to HP
+          const newHp = Math.max(0, character.hitPoints - Math.abs(value));
+          await storage.updateCharacter(req.params.id, { hitPoints: newHp });
+          
+          // Apply automatic status effects
+          await applyAutomaticStatusEffects({
+            characterId: character.id,
+            currentHp: newHp,
+            maxHp: character.maxHitPoints,
+            currentSanity: character.sanity,
+            maxSanity: character.maxSanity,
+            strength: character.strength,
+            constitution: character.constitution,
+            size: character.size
+          });
+        } else if (effectData.type === 'sanity_loss' && value !== 0) {
+          // Apply sanity loss
+          const newSanity = Math.max(0, character.sanity - Math.abs(value));
+          await storage.updateCharacter(req.params.id, { sanity: newSanity });
+          
+          // Check if temporary insanity should be applied
+          if (Math.abs(value) >= 5) {
+            await applyTemporaryInsanity(character.id);
+          }
+          
+          // Apply automatic status effects
+          await applyAutomaticStatusEffects({
+            characterId: character.id,
+            currentHp: character.hitPoints,
+            maxHp: character.maxHitPoints,
+            currentSanity: newSanity,
+            maxSanity: character.maxSanity,
+            strength: character.strength,
+            constitution: character.constitution,
+            size: character.size
+          });
+        }
+      }
+      
       res.json(effect);
     } catch (error) {
       console.error("Error adding effect:", error);
