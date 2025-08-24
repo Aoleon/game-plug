@@ -549,6 +549,9 @@ export default function CharacterCreation() {
       avatarUrl: avatarUrl || undefined,
       avatarPrompt: buildDescription() || undefined,
       isActive: true,
+      
+      // Starting money (default for 1920s era)
+      money: "50.00",
     };
 
     createCharacterMutation.mutate(characterData);

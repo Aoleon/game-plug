@@ -90,6 +90,9 @@ export const characters = pgTable("characters", {
   // Player notes
   notes: text("notes"),
   
+  // Money
+  money: decimal("money", { precision: 10, scale: 2 }).default('0.00'),
+  
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

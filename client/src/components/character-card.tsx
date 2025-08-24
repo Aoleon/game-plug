@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollText, User, Heart, Brain, Sparkles } from "lucide-react";
+import { ScrollText, User, Heart, Brain, Sparkles, Coins } from "lucide-react";
 import type { Character } from "@shared/schema";
 
 interface CharacterCardProps {
@@ -51,7 +51,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
         </div>
         
         {/* Vital Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="text-center bg-cosmic-void rounded-lg p-3">
             <div className="flex items-center justify-center mb-1">
               <Heart className="h-4 w-4 text-red-500 mr-1" />
@@ -101,6 +101,16 @@ export default function CharacterCard({ character }: CharacterCardProps) {
                 style={{ width: `${(character.magicPoints / character.maxMagicPoints) * 100}%` }}
               />
             </div>
+          </div>
+          
+          <div className="text-center bg-cosmic-void rounded-lg p-3">
+            <div className="flex items-center justify-center mb-1">
+              <Coins className="h-4 w-4 text-yellow-500 mr-1" />
+              <div className="text-lg font-bold text-bone-white" data-testid={`text-money-${character.id}`}>
+                ${character.money || '0.00'}
+              </div>
+            </div>
+            <div className="text-xs text-aged-parchment">Argent</div>
           </div>
         </div>
         

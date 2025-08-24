@@ -48,6 +48,7 @@ const characterEditSchema = z.object({
   maxSanity: z.coerce.number().min(1),
   magicPoints: z.coerce.number().min(0),
   maxMagicPoints: z.coerce.number().min(1),
+  money: z.coerce.number().min(0).optional(),
 });
 
 type CharacterEditForm = z.infer<typeof characterEditSchema>;
@@ -117,6 +118,7 @@ export default function CharacterEdit() {
       maxSanity: 50,
       magicPoints: 10,
       maxMagicPoints: 10,
+      money: 0,
     },
   });
 
@@ -145,6 +147,7 @@ export default function CharacterEdit() {
         maxSanity: character.maxSanity,
         magicPoints: character.magicPoints,
         maxMagicPoints: character.maxMagicPoints,
+        money: character.money ? parseFloat(character.money.toString()) : 0,
       });
       setAvatarUrl(character.avatarUrl || "");
       setSkillPoints(character.skills as Record<string, number> || {});
@@ -611,6 +614,39 @@ export default function CharacterEdit() {
                     )}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Money and Resources */}
+            <Card className="bg-charcoal border-aged-gold parchment-bg">
+              <CardHeader>
+                <CardTitle className="font-cinzel text-aged-gold">
+                  Ressources
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="money"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-aged-parchment font-source">Argent ($)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          {...field} 
+                          className="bg-cosmic-void border-aged-gold text-bone-white" 
+                          min="0" 
+                        />
+                      </FormControl>
+                      <FormDescription className="text-aged-parchment text-xs">
+                        L'argent disponible du personnage en dollars
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 

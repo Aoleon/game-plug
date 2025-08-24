@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck, Image, Sparkles } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck, Image, Sparkles, Coins, Edit2 } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -60,6 +60,8 @@ export default function CharacterSheet() {
     damage: '',
     armor: 0
   });
+  const [isEditingMoney, setIsEditingMoney] = useState(false);
+  const [moneyValue, setMoneyValue] = useState("0.00");
   
   // Avatar customization states
   const [showAvatarDialog, setShowAvatarDialog] = useState(false);
@@ -107,12 +109,15 @@ export default function CharacterSheet() {
     }
   }, [inventoryData]);
   
-  // Initialize notes when character data is loaded
+  // Initialize notes and money when character data is loaded
   useEffect(() => {
     if (character?.notes) {
       setNotes(character.notes);
     }
-  }, [character?.notes]);
+    if (character?.money) {
+      setMoneyValue(character.money.toString());
+    }
+  }, [character?.notes, character?.money]);
   
   // Save notes function
   const saveNotes = async () => {
@@ -553,7 +558,7 @@ export default function CharacterSheet() {
                 </div>
 
                 {/* Vital Stats */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className={`text-center bg-cosmic-void rounded-lg p-3 border-2 ${
                     character.hitPoints <= 2 ? 'border-red-600 animate-pulse' : 
                     character.hitPoints / character.maxHitPoints < 0.5 ? 'border-orange-500' :
@@ -581,6 +586,55 @@ export default function CharacterSheet() {
                       {character.magicPoints}/{character.maxMagicPoints}
                     </div>
                     <div className="text-xs text-aged-parchment">Points de Magie</div>
+                  </div>
+                  <div className="text-center bg-cosmic-void rounded-lg p-3 relative">
+                    {isEditingMoney ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={moneyValue}
+                          onChange={(e) => setMoneyValue(e.target.value)}
+                          className="w-20 px-1 py-0 text-center bg-deep-black border border-aged-gold rounded text-bone-white text-lg font-bold"
+                          data-testid="input-money"
+                        />
+                        <button
+                          onClick={async () => {
+                            try {
+                              await apiRequest("PATCH", `/api/characters/${characterId}`, { money: parseFloat(moneyValue) });
+                              queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
+                              setIsEditingMoney(false);
+                              toast({
+                                title: "Argent mis à jour",
+                                description: "L'argent du personnage a été modifié.",
+                              });
+                            } catch (error) {
+                              console.error("Error updating money:", error);
+                              toast({
+                                title: "Erreur",
+                                description: "Impossible de mettre à jour l'argent.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="p-1 hover:bg-aged-gold/20 rounded"
+                          data-testid="button-save-money"
+                        >
+                          <Save className="h-4 w-4 text-eldritch-green" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div 
+                        className="group cursor-pointer"
+                        onClick={() => setIsEditingMoney(true)}
+                      >
+                        <div className="text-lg font-bold text-bone-white flex items-center justify-center gap-1" data-testid="text-money">
+                          ${character.money || '0.00'}
+                          <Edit2 className="h-3 w-3 text-aged-gold opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-xs text-aged-parchment">Argent</div>
                   </div>
                 </div>
                 
