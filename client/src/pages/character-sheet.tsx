@@ -8,11 +8,11 @@ import Navigation from "@/components/navigation";
 import DiceRoller from "@/components/dice-roller";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import SanityTracker from "@/components/sanity-tracker";
-import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit3, Dice6 } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield } from "lucide-react";
+import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -45,6 +45,13 @@ export default function CharacterSheet() {
   const { data: character, isLoading: characterLoading, error } = useQuery<CharacterWithDetails>({
     queryKey: ["/api/characters", characterId],
     retry: false,
+  });
+  
+  // Fetch roll history for this character
+  const { data: characterRolls } = useQuery<any[]>({
+    queryKey: ["/api/sessions", character?.sessionId, "rolls"],
+    retry: false,
+    enabled: !!character?.sessionId,
   });
 
   if (characterLoading || isLoading) {
@@ -240,7 +247,7 @@ export default function CharacterSheet() {
                   {Object.entries(skills).map(([skillName, skillValue]) => (
                     <div key={skillName} className="flex justify-between items-center">
                       <span className="font-source text-aged-parchment">
-                        {skillName.charAt(0).toUpperCase() + skillName.slice(1)}
+                        {SKILL_TRANSLATIONS[skillName] || skillName.charAt(0).toUpperCase() + skillName.slice(1).replace(/_/g, ' ')}
                       </span>
                       <span className="text-bone-white font-bold" data-testid={`skill-${skillName}`}>
                         {skillValue}%
@@ -254,7 +261,6 @@ export default function CharacterSheet() {
 
           {/* Right Column - Dice Roller & Sanity */}
           <div className="space-y-6">
-            <UnifiedAmbientController />
             <DiceRoller character={character} />
             <SanityTracker character={character} />
 
@@ -313,12 +319,82 @@ export default function CharacterSheet() {
           </div>
         </div>
         
-        {/* Roll History */}
-        <RollHistoryVisual 
-          rolls={rollHistory}
-          className="mt-6"
-          maxItems={15}
-        />
+        {/* Roll History & Effects History */}
+        <div className="mt-8 space-y-6">
+          <Card className="bg-charcoal border-aged-gold parchment-bg">
+            <CardHeader>
+              <CardTitle className="font-cinzel text-aged-gold">
+                Historique des Lancés et Effets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Recent Rolls */}
+              {characterRolls && characterRolls.length > 0 && (
+                <div>
+                  <h3 className="font-source text-bone-white font-semibold mb-3">Lancés Récents</h3>
+                  <div className="space-y-2">
+                    {characterRolls.slice(0, 10).map((roll: any) => (
+                      <div key={roll.id} className="bg-cosmic-void border border-aged-gold rounded p-2 flex justify-between items-center">
+                        <div>
+                          <span className="text-bone-white font-source">
+                            {roll.skillName ? SKILL_TRANSLATIONS[roll.skillName] || roll.skillName : roll.rollType}
+                          </span>
+                          {roll.outcome && (
+                            <span className={`ml-2 text-sm ${roll.outcome.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+                              ({roll.outcome === 'extreme_success' ? 'Succès Extrême' : 
+                                roll.outcome === 'hard_success' ? 'Succès Difficile' :
+                                roll.outcome === 'success' ? 'Succès' : 'Échec'})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-aged-gold font-bold">{roll.result}</span>
+                          {roll.skillValue && (
+                            <span className="text-aged-parchment text-sm ml-2">/ {roll.skillValue}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Effects History */}
+              {character.activeEffects.length > 0 && (
+                <div>
+                  <h3 className="font-source text-bone-white font-semibold mb-3">Effets Appliqués</h3>
+                  <div className="space-y-2">
+                    {character.activeEffects.map((effect) => (
+                      <div key={effect.id} className="bg-cosmic-void border border-aged-gold rounded p-2">
+                        <div className="flex items-center gap-2">
+                          {effect.type === 'damage' && <Heart className="h-4 w-4 text-red-500" />}
+                          {effect.type === 'sanity_loss' && <Brain className="h-4 w-4 text-purple-500" />}
+                          {effect.type === 'buff' && <Shield className="h-4 w-4 text-green-500" />}
+                          {effect.type === 'debuff' && <Shield className="h-4 w-4 text-red-500" />}
+                          <span className="text-bone-white font-source">{effect.name}</span>
+                          {effect.value && (
+                            <span className="text-aged-gold ml-auto">
+                              {effect.type === 'damage' ? `-${effect.value} PV` : 
+                               effect.type === 'sanity_loss' ? `-${effect.value} SAN` : 
+                               effect.value}
+                            </span>
+                          )}
+                        </div>
+                        {effect.description && (
+                          <p className="text-aged-parchment text-sm mt-1">{effect.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {(!characterRolls || characterRolls.length === 0) && character.activeEffects.length === 0 && (
+                <p className="text-aged-parchment text-center">Aucun historique disponible</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

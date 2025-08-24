@@ -18,6 +18,93 @@ export interface SanityPreset {
   description: string;
 }
 
+// Translation map for skill names
+export const SKILL_TRANSLATIONS: Record<string, string> = {
+  // Interpersonal Skills
+  'charm': 'Baratin',
+  'fast_talk': 'Persuasion Rapide',
+  'intimidate': 'Intimidation',
+  'persuade': 'Persuasion',
+  'psychoanalysis': 'Psychanalyse',
+  'psychology': 'Psychologie',
+  
+  // Knowledge Skills
+  'accounting': 'Comptabilité',
+  'anthropology': 'Anthropologie',
+  'appraise': 'Estimation',
+  'archaeology': 'Archéologie',
+  'computer_use': 'Informatique',
+  'history': 'Histoire',
+  'law': 'Droit',
+  'library_use': 'Bibliothèque',
+  'medicine': 'Médecine',
+  'natural_world': 'Sciences Naturelles',
+  'occult': 'Occultisme',
+  
+  // Language Skills
+  'language_own': 'Langue Maternelle',
+  'language_other': 'Langue Étrangère',
+  'language_latin': 'Latin',
+  'language_greek': 'Grec Ancien',
+  
+  // Art & Craft
+  'art_craft_acting': 'Art/Artisanat (Comédie)',
+  'art_craft_photography': 'Art/Artisanat (Photographie)',
+  'art_craft_writing': 'Art/Artisanat (Écriture)',
+  'art_craft_forgery': 'Art/Artisanat (Contrefaçon)',
+  'art_craft_fine_art': 'Art/Artisanat (Beaux-Arts)',
+  'art_craft': 'Art/Artisanat',
+  
+  // Science
+  'science_astronomy': 'Science (Astronomie)',
+  'science_biology': 'Science (Biologie)',
+  'science_chemistry': 'Science (Chimie)',
+  'science_geology': 'Science (Géologie)',
+  'science_mathematics': 'Science (Mathématiques)',
+  'science_pharmacy': 'Science (Pharmacologie)',
+  'science_physics': 'Science (Physique)',
+  
+  // Combat Skills
+  'dodge': 'Esquive',
+  'fighting_brawl': 'Combat Rapproché (Bagarre)',
+  'fighting_sword': 'Combat Rapproché (Épée)',
+  'fighting_axe': 'Combat Rapproché (Hache)',
+  'firearms_handgun': 'Armes à Feu (Pistolet)',
+  'firearms_rifle_shotgun': 'Armes à Feu (Fusil)',
+  'firearms_submachine_gun': 'Armes à Feu (Mitraillette)',
+  'firearms_machine_gun': 'Armes à Feu (Mitrailleuse)',
+  'throw': 'Lancer',
+  
+  // Physical Skills
+  'climb': 'Grimper',
+  'jump': 'Sauter',
+  'listen': 'Écouter',
+  'locksmith': 'Crochetage',
+  'sleight_of_hand': 'Pickpocket',
+  'spot_hidden': 'Trouver Objet Caché',
+  'stealth': 'Discrétion',
+  'survival': 'Survie',
+  'swim': 'Nager',
+  'track': 'Pister',
+  
+  // Technical Skills
+  'disguise': 'Déguisement',
+  'drive_auto': 'Conduite (Automobile)',
+  'electrical_repair': 'Électricité',
+  'electronics': 'Électronique',
+  'first_aid': 'Premiers Soins',
+  'hypnosis': 'Hypnose',
+  'mechanical_repair': 'Mécanique',
+  'navigate': 'Navigation',
+  'operate_heavy_machinery': 'Machinerie Lourde',
+  'pilot': 'Pilotage',
+  'ride': 'Équitation',
+  
+  // Special Skills
+  'credit_rating': 'Crédit',
+  'cthulhu_mythos': 'Mythe de Cthulhu',
+};
+
 // Call of Cthulhu 7th Edition - Base skill percentages
 export const DEFAULT_SKILLS: Record<string, number> = {
   // Interpersonal Skills
