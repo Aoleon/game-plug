@@ -164,11 +164,84 @@ export default function CharacterCreation() {
     const maxValue = 90 - baseValue;
     const clampedValue = Math.max(0, Math.min(value, maxValue));
     
+    // Get occupation skills
+    const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
+    const occupationSkills = occupation?.occupationSkills || [];
+    const isOccupationSkill = occupationSkills.includes(skill);
+    
+    // Calculate what the new totals would be
     const newAllocations = { ...allocatedPoints };
-    if (clampedValue === 0) {
-      delete newAllocations[skill];
+    const oldValue = allocatedPoints[skill] || 0;
+    const difference = clampedValue - oldValue;
+    
+    // Calculate current points used (excluding this skill)
+    let occUsedWithoutThis = 0;
+    let persUsedWithoutThis = 0;
+    
+    Object.entries(allocatedPoints).forEach(([s, points]) => {
+      if (s !== skill) {
+        if (occupationSkills.includes(s)) {
+          occUsedWithoutThis += points;
+        } else {
+          persUsedWithoutThis += points;
+        }
+      }
+    });
+    
+    // Check if we would exceed limits
+    if (isOccupationSkill) {
+      const newOccTotal = occUsedWithoutThis + clampedValue;
+      if (newOccTotal > availableOccupationPoints) {
+        // Limit to available points
+        const maxAllowed = availableOccupationPoints - occUsedWithoutThis;
+        if (maxAllowed <= 0) {
+          toast({
+            title: "Limite atteinte",
+            description: `Vous avez utilisé tous vos points d'occupation (${availableOccupationPoints} points)`,
+            variant: "destructive",
+          });
+          return;
+        }
+        const limitedValue = Math.min(clampedValue, maxAllowed);
+        if (limitedValue === 0) {
+          delete newAllocations[skill];
+        } else {
+          newAllocations[skill] = limitedValue;
+        }
+      } else {
+        if (clampedValue === 0) {
+          delete newAllocations[skill];
+        } else {
+          newAllocations[skill] = clampedValue;
+        }
+      }
     } else {
-      newAllocations[skill] = clampedValue;
+      // Personal interest skill
+      const newPersTotal = persUsedWithoutThis + clampedValue;
+      if (newPersTotal > availablePersonalPoints) {
+        // Limit to available points
+        const maxAllowed = availablePersonalPoints - persUsedWithoutThis;
+        if (maxAllowed <= 0) {
+          toast({
+            title: "Limite atteinte",
+            description: `Vous avez utilisé tous vos points d'intérêts personnels (${availablePersonalPoints} points)`,
+            variant: "destructive",
+          });
+          return;
+        }
+        const limitedValue = Math.min(clampedValue, maxAllowed);
+        if (limitedValue === 0) {
+          delete newAllocations[skill];
+        } else {
+          newAllocations[skill] = limitedValue;
+        }
+      } else {
+        if (clampedValue === 0) {
+          delete newAllocations[skill];
+        } else {
+          newAllocations[skill] = clampedValue;
+        }
+      }
     }
     
     setAllocatedPoints(newAllocations);
@@ -659,7 +732,11 @@ export default function CharacterCreation() {
                     <div className="bg-cosmic-void rounded-lg p-4 border border-aged-gold">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-source text-aged-parchment">Points d'Occupation</span>
-                        <span className="text-sm font-bold text-aged-gold">
+                        <span className={`text-sm font-bold ${
+                          usedOccupationPoints > availableOccupationPoints ? 'text-red-600' :
+                          usedOccupationPoints === availableOccupationPoints ? 'text-green-500' :
+                          'text-aged-gold'
+                        }`}>
                           {usedOccupationPoints} / {availableOccupationPoints}
                         </span>
                       </div>
@@ -675,7 +752,11 @@ export default function CharacterCreation() {
                     <div className="bg-cosmic-void rounded-lg p-4 border border-aged-gold">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-source text-aged-parchment">Points d'Intérêts Personnels</span>
-                        <span className="text-sm font-bold text-aged-gold">
+                        <span className={`text-sm font-bold ${
+                          usedPersonalPoints > availablePersonalPoints ? 'text-red-600' :
+                          usedPersonalPoints === availablePersonalPoints ? 'text-green-500' :
+                          'text-aged-gold'
+                        }`}>
                           {usedPersonalPoints} / {availablePersonalPoints}
                         </span>
                       </div>
@@ -703,8 +784,20 @@ export default function CharacterCreation() {
                   {/* Skills Grid */}
                   {manualSkillMode ? (
                     <div className="space-y-4">
-                      <div className="text-sm text-aged-parchment mb-2">
-                        Cliquez sur une compétence pour allouer des points. Maximum 90% par compétence.
+                      <div className="space-y-2 mb-4">
+                        <div className="text-sm text-aged-parchment">
+                          Cliquez sur une compétence pour allouer des points. Maximum 90% par compétence.
+                        </div>
+                        <div className="flex gap-4 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-aged-gold text-deep-black">Occ</Badge>
+                            <span className="text-aged-parchment">Compétences d'occupation uniquement</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 border border-aged-parchment/30 rounded"></div>
+                            <span className="text-aged-parchment">Toutes les compétences (points personnels)</span>
+                          </div>
+                        </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
                         {Object.entries(DEFAULT_SKILLS).map(([skillKey, baseValue]) => {
@@ -739,7 +832,15 @@ export default function CharacterCreation() {
                                   max={90 - baseValue}
                                   value={allocated}
                                   onChange={(e) => handleSkillPointChange(skillKey, parseInt(e.target.value) || 0)}
-                                  className="w-16 h-8 bg-deep-black border-aged-gold text-bone-white text-center"
+                                  className={`w-16 h-8 bg-deep-black text-bone-white text-center ${
+                                    isOccupationSkill && usedOccupationPoints >= availableOccupationPoints && allocated === 0 ? 'border-red-600 opacity-50' :
+                                    !isOccupationSkill && usedPersonalPoints >= availablePersonalPoints && allocated === 0 ? 'border-red-600 opacity-50' :
+                                    'border-aged-gold'
+                                  }`}
+                                  disabled={
+                                    (isOccupationSkill && usedOccupationPoints >= availableOccupationPoints && allocated === 0) ||
+                                    (!isOccupationSkill && usedPersonalPoints >= availablePersonalPoints && allocated === 0)
+                                  }
                                   data-testid={`skill-input-${skillKey}`}
                                 />
                                 <div className="text-sm font-bold text-aged-gold w-12 text-right">
