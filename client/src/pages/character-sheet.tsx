@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation";
 import DiceRoller from "@/components/dice-roller";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import SanityTracker from "@/components/sanity-tracker";
+import AmbientSoundController from "@/components/ambient-sound-controller";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,6 +254,7 @@ export default function CharacterSheet() {
 
           {/* Right Column - Dice Roller & Sanity */}
           <div className="space-y-6">
+            <AmbientSoundController />
             <DiceRoller character={character} />
             <SanityTracker character={character} />
 

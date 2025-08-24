@@ -6,7 +6,7 @@ interface DiceSoundContextType {
   playFailure: () => void;
   playCritical: () => void;
   playFumble: () => void;
-  playAmbient: () => void;
+  playAmbient: (type?: 'cave' | 'whispers' | 'heartbeat') => void;
   stopAmbient: () => void;
 }
 
@@ -166,7 +166,7 @@ export function DiceSoundProvider({ children }: { children: ReactNode }) {
     oscillator.stop(now + 0.5);
   };
 
-  const playAmbient = () => {
+  const playAmbient = (type: 'cave' | 'whispers' | 'heartbeat' = 'cave') => {
     const ctx = initAudio();
     if (!ctx) return;
 
@@ -176,25 +176,73 @@ export function DiceSoundProvider({ children }: { children: ReactNode }) {
     ambientOscillator.current = ctx.createOscillator();
     ambientGain.current = ctx.createGain();
     
-    // Create a low-frequency oscillator for modulation
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
+    // Create filters for atmosphere
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, ctx.currentTime);
     
-    lfo.frequency.setValueAtTime(0.2, ctx.currentTime); // Very slow modulation
-    lfoGain.gain.setValueAtTime(20, ctx.currentTime);
+    switch (type) {
+      case 'cave':
+        // Deep cave ambiance
+        ambientOscillator.current.type = 'triangle';
+        ambientOscillator.current.frequency.setValueAtTime(40, ctx.currentTime);
+        
+        // Add reverb-like modulation
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(0.3, ctx.currentTime);
+        lfoGain.gain.setValueAtTime(5, ctx.currentTime);
+        lfo.connect(lfoGain);
+        lfoGain.connect(ambientOscillator.current.frequency);
+        lfo.start();
+        
+        ambientGain.current.gain.setValueAtTime(0.15, ctx.currentTime); // Audible volume
+        break;
+        
+      case 'whispers':
+        // Eldritch whispers
+        ambientOscillator.current.type = 'sawtooth';
+        ambientOscillator.current.frequency.setValueAtTime(800, ctx.currentTime);
+        
+        // Rapid frequency modulation for whisper effect
+        const whisperLfo = ctx.createOscillator();
+        const whisperGain = ctx.createGain();
+        whisperLfo.frequency.setValueAtTime(8, ctx.currentTime);
+        whisperGain.gain.setValueAtTime(200, ctx.currentTime);
+        whisperLfo.connect(whisperGain);
+        whisperGain.connect(ambientOscillator.current.frequency);
+        whisperLfo.start();
+        
+        filter.frequency.setValueAtTime(1000, ctx.currentTime);
+        ambientGain.current.gain.setValueAtTime(0.08, ctx.currentTime);
+        break;
+        
+      case 'heartbeat':
+        // Ominous heartbeat
+        ambientOscillator.current.type = 'sine';
+        ambientOscillator.current.frequency.setValueAtTime(50, ctx.currentTime);
+        
+        // Create heartbeat rhythm
+        const now = ctx.currentTime;
+        ambientGain.current.gain.setValueAtTime(0, now);
+        
+        // Heartbeat pattern
+        for (let i = 0; i < 100; i++) {
+          const beatTime = now + i * 0.8;
+          ambientGain.current.gain.setValueAtTime(0, beatTime);
+          ambientGain.current.gain.linearRampToValueAtTime(0.2, beatTime + 0.1);
+          ambientGain.current.gain.linearRampToValueAtTime(0, beatTime + 0.2);
+          ambientGain.current.gain.setValueAtTime(0, beatTime + 0.3);
+          ambientGain.current.gain.linearRampToValueAtTime(0.15, beatTime + 0.35);
+          ambientGain.current.gain.linearRampToValueAtTime(0, beatTime + 0.45);
+        }
+        break;
+    }
     
-    lfo.connect(lfoGain);
-    lfoGain.connect(ambientOscillator.current.frequency);
-    
-    ambientOscillator.current.type = 'sine';
-    ambientOscillator.current.frequency.setValueAtTime(60, ctx.currentTime); // Deep bass
-    
-    ambientOscillator.current.connect(ambientGain.current);
+    ambientOscillator.current.connect(filter);
+    filter.connect(ambientGain.current);
     ambientGain.current.connect(ctx.destination);
     
-    ambientGain.current.gain.setValueAtTime(0.05, ctx.currentTime); // Very quiet
-    
-    lfo.start();
     ambientOscillator.current.start();
   };
 

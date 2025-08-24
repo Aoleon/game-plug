@@ -10,6 +10,7 @@ import ConnectionIndicator from "@/components/connection-indicator";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import GMSecretRoll from "@/components/gm-secret-roll";
 import NarrativeTools from "@/components/narrative-tools";
+import AmbientSoundController from "@/components/ambient-sound-controller";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -385,6 +386,11 @@ export default function GMDashboard() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Ambient Sound Controller */}
+        <div className="mb-6">
+          <AmbientSoundController />
         </div>
 
         {/* Advanced GM Tools */}
