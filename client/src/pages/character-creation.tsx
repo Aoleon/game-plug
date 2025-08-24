@@ -30,7 +30,7 @@ const characterCreationSchema = z.object({
   birthplace: z.string().optional(),
   residence: z.string().optional(),
   gender: z.string().optional(),
-  sessionId: z.string().min(1, "ID de session requis"),
+  sessionId: z.string().optional(),
   avatarDescription: z.string().optional(),
 });
 
@@ -254,14 +254,24 @@ export default function CharacterCreation() {
     const derivedStats = calculateDerivedStats(characteristics);
     const occupation = OCCUPATIONS.find(occ => occ.name === data.occupation);
     
+    // If no sessionId provided, create a default one or get from available sessions
+    let finalSessionId = data.sessionId;
+    if (!finalSessionId && sessions && sessions.length > 0) {
+      finalSessionId = sessions[0].id; // Use first available session
+    }
+    if (!finalSessionId) {
+      // Create a temporary session ID for character creation
+      finalSessionId = `temp-${Date.now()}`;
+    }
+    
     const characterData: InsertCharacter = {
       name: data.name,
       occupation: data.occupation,
-      age: data.age,
+      age: typeof data.age === "number" ? data.age : 25,
       birthplace: data.birthplace || "",
       residence: data.residence || "",
       gender: data.gender || "",
-      sessionId: data.sessionId,
+      sessionId: finalSessionId,
       userId: "", // This will be set by the backend
       
       // Characteristics
@@ -388,7 +398,11 @@ export default function CharacterCreation() {
                             min={15}
                             max={99}
                             className="bg-cosmic-void border-aged-gold text-bone-white"
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? "" : parseInt(value) || 25);
+                            }}
+                            value={field.value || ""}
                             data-testid="input-age"
                           />
                         </FormControl>
@@ -486,6 +500,52 @@ export default function CharacterCreation() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Session Selection */}
+            {!sessionFromStorage && !sessionIdFromStorage && (
+              <Card className="bg-charcoal border-aged-gold parchment-bg">
+                <CardHeader>
+                  <CardTitle className="font-cinzel text-aged-gold">
+                    Session de Jeu
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="sessionId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-aged-parchment font-source">
+                          Choisir une session (optionnel)
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger 
+                              className="bg-cosmic-void border-aged-gold text-bone-white"
+                              data-testid="select-session"
+                            >
+                              <SelectValue placeholder="Aucune session sélectionnée" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-cosmic-void border-aged-gold">
+                            <SelectItem value="">Aucune session</SelectItem>
+                            {sessions?.map((session) => (
+                              <SelectItem key={session.id} value={session.id}>
+                                {session.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        <FormDescription className="text-aged-parchment text-sm">
+                          Vous pourrez rejoindre une session plus tard si vous n'en sélectionnez pas maintenant.
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Avatar Generation */}
             <Card className="bg-charcoal border-aged-gold parchment-bg">

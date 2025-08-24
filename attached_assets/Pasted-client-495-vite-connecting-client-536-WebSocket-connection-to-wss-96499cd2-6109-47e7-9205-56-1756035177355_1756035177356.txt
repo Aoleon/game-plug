@@ -1,0 +1,47 @@
+client:495 [vite] connecting...
+client:536 WebSocket connection to 'wss://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/?token=uAaQV1Dh3Sck' failed: Error during WebSocket handshake: Unexpected response code: 400
+setupWebSocket @ client:536
+client:536 Uncaught (in promise) DOMException: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=uAaQV1Dh3Sck' is invalid.
+    at setupWebSocket (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@vite/client:536:19)
+    at fallback (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@vite/client:509:16)
+    at WebSocket.<anonymous> (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@vite/client:555:7)
+chunk-RPCDYKBN.js?v=ea3506ab:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+chunk-RPCDYKBN.js?v=ea3506ab:521 Warning: Received NaN for the `value` attribute. If this is expected, cast the value to a string.
+    at input
+    at _c (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/input.tsx:20:11)
+    at https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=ea3506ab:79:13
+    at https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EVLBUYTV.js?v=ea3506ab:56:13
+    at https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/form.tsx:130:9
+    at div
+    at https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/form.tsx:72:6
+    at Controller (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=ea3506ab:298:35)
+    at FormField (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/form.tsx:33:6)
+    at div
+    at div
+    at _c9 (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at form
+    at FormProvider (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=ea3506ab:102:11)
+    at div
+    at div
+    at CharacterCreation (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/pages/character-creation.tsx:51:27)
+    at Route (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ea3506ab:323:16)
+    at Switch (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ea3506ab:379:17)
+    at Router (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/App.tsx?v=nDytzPOnzFcFzql0t5GLS:36:42)
+    at Provider (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=ea3506ab:38:15)
+    at TooltipProvider (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=ea3506ab:63:5)
+    at DiceSoundProvider (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/src/components/dice-sound-manager.tsx:20:37)
+    at QueryClientProvider (https://96499cd2-6109-47e7-9205-561fd7108f5f-00-2ucguq6ozeiab.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=ea3506ab:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=ea3506ab:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=ea3506ab:1861 The specified value "NaN" cannot be parsed, or is out of range.
+set @ chunk-RPCDYKBN.js?v=ea3506ab:1861
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=ea3506ab:1861 The specified value "NaN" cannot be parsed, or is out of range.
+set @ chunk-RPCDYKBN.js?v=ea3506ab:1861
+Show 1 more frame
+Show less

@@ -496,10 +496,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (data.type === 'join_session' && data.sessionId) {
           sessionId = data.sessionId;
           
-          if (!sessionConnections.has(sessionId)) {
-            sessionConnections.set(sessionId, new Set());
+          if (sessionId) {
+            if (!sessionConnections.has(sessionId)) {
+              sessionConnections.set(sessionId, new Set());
+            }
           }
-          sessionConnections.get(sessionId!)?.add(ws);
+          const connections = sessionId ? sessionConnections.get(sessionId) : null;
+          if (connections) {
+            connections.add(ws);
+          }
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -508,9 +513,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', () => {
       if (sessionId && sessionConnections.has(sessionId)) {
-        sessionConnections.get(sessionId!)?.delete(ws);
-        if (sessionConnections.get(sessionId!)?.size === 0) {
-          sessionConnections.delete(sessionId!);
+        const connections = sessionConnections.get(sessionId);
+        if (connections) {
+          connections.delete(ws);
+          if (connections.size === 0) {
+            sessionConnections.delete(sessionId);
+          }
         }
       }
     });
