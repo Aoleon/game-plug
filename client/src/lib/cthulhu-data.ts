@@ -1,12 +1,15 @@
 // Call of Cthulhu 7th Edition game data constants
 
 export interface Occupation {
+  id: string;
   name: string;
   description: string;
   creditRating: [number, number]; // min, max
   suggestedContacts: string[];
-  skills: Record<string, number>; // skill name -> base value
-  skillPoints: string; // formula for skill points (e.g., "EDU × 4")
+  occupationSkills: string[]; // 8 occupation skills
+  skillPointsFormula: string; // formula for skill points (e.g., "EDU × 4")
+  recommendedSkills?: string[]; // Additional recommended skills
+  era?: string; // Era appropriateness (e.g., "1920s", "Modern")
 }
 
 export interface SanityPreset {
@@ -15,160 +18,293 @@ export interface SanityPreset {
   description: string;
 }
 
-// Default skill values for new characters
+// Call of Cthulhu 7th Edition - Base skill percentages
 export const DEFAULT_SKILLS: Record<string, number> = {
-  // Combat skills
-  'dodge': 0, // Will be calculated as DEX/2
-  'fighting_brawl': 25,
-  'firearms_handgun': 20,
-  'firearms_rifle': 25,
-  'throw': 25,
-  
-  // Communication skills
+  // Interpersonal Skills
   'charm': 15,
   'fast_talk': 5,
   'intimidate': 15,
-  'persuade': 10,
+  'persuade': 15,
+  'psychoanalysis': 1,
+  'psychology': 15,
   
-  // Mental skills
+  // Knowledge Skills
   'accounting': 5,
   'anthropology': 1,
+  'appraise': 5,
   'archaeology': 1,
-  'art_craft': 5,
-  'history': 5,
-  'library_use': 20,
-  'medicine': 1,
+  'computer_use': 1, // Modern setting
+  'history': 20,
+  'law': 5,
+  'library_use': 25,
+  'medicine': 5,
   'natural_world': 10,
   'occult': 5,
-  'psychology': 10,
-  'science': 1,
   
-  // Physical skills
-  'climb': 20,
+  // Language Skills
+  'language_own': 0, // Will be set to EDU%
+  'language_other': 1,
+  'language_latin': 1,
+  'language_greek': 1,
+  
+  // Art & Craft Specializations
+  'art_craft_acting': 5,
+  'art_craft_photography': 5,
+  'art_craft_writing': 5,
+  'art_craft_forgery': 5,
+  'art_craft_fine_art': 5,
+  
+  // Science Specializations  
+  'science_astronomy': 1,
+  'science_biology': 1,
+  'science_chemistry': 1,
+  'science_geology': 1,
+  'science_mathematics': 1,
+  'science_pharmacy': 1,
+  'science_physics': 1,
+  
+  // Combat Skills
+  'dodge': 0, // Will be calculated as DEX/2
+  'fighting_brawl': 25,
+  'fighting_sword': 1,
+  'fighting_axe': 1,
+  'firearms_handgun': 20,
+  'firearms_rifle_shotgun': 25,
+  'firearms_submachine_gun': 1,
+  'firearms_machine_gun': 1,
+  'throw': 25,
+  
+  // Physical Skills
+  'climb': 40,
+  'jump': 25,
+  'listen': 25,
+  'locksmith': 1,
+  'sleight_of_hand': 10,
+  'spot_hidden': 25,
+  'stealth': 20,
+  'survival': 10,
+  'swim': 25,
+  'track': 10,
+  
+  // Technical Skills
+  'disguise': 1,
   'drive_auto': 20,
   'electrical_repair': 10,
-  'listen': 20,
-  'locksmith': 1,
-  'mechanical_repair': 10,
+  'electronics': 1, // Modern setting
+  'first_aid': 30,
+  'hypnosis': 1,
+  'mechanical_repair': 20,
+  'navigate': 10,
   'operate_heavy_machinery': 1,
   'pilot': 1,
   'ride': 5,
-  'sleight_of_hand': 10,
-  'spot': 25,
-  'stealth': 20,
-  'survival': 10,
-  'swim': 20,
-  'track': 10,
   
-  // Other skills
-  'first_aid': 30,
-  'jump': 20,
-  'language_own': 0, // Will be calculated as EDU
-  'language_other': 1,
-  'navigate': 10,
-  'credit_rating': 0, // Varies by occupation
-  'cthulhu_mythos': 0,
+  // Special Skills
+  'credit_rating': 15, // Modified by occupation
+  'cthulhu_mythos': 0, // Always starts at 0
 };
 
-// Common Call of Cthulhu occupations
+// Call of Cthulhu 7th Edition Occupations
 export const OCCUPATIONS: Occupation[] = [
   {
+    id: 'antiquarian',
     name: 'Antiquaire',
-    description: 'Expert en objets anciens et artefacts historiques',
+    description: 'Expert en objets anciens et artefacts historiques. Peut identifier et évaluer des objets rares.',
     creditRating: [30, 70],
-    suggestedContacts: ['Collectionneurs', 'Musées', 'Universités'],
-    skills: {
-      accounting: 10,
-      appraise: 40,
-      art_craft: 30,
-      history: 60,
-      library_use: 40,
-      language_other: 25,
-      spot: 45,
-      credit_rating: 30,
-    },
-    skillPoints: 'EDU × 4',
+    suggestedContacts: ['Collectionneurs', 'Musées', 'Universités', 'Marchands d\'art'],
+    occupationSkills: [
+      'appraise',
+      'art_craft',
+      'history',
+      'library_use',
+      'language_other',
+      'spot_hidden',
+      'persuade',
+      'accounting'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['archaeology', 'charm', 'fast_talk'],
+    era: '1920s',
   },
   {
+    id: 'doctor',
     name: 'Médecin',
-    description: 'Praticien de la médecine moderne',
-    creditRating: [50, 90],
-    suggestedContacts: ['Hôpitaux', 'Autres médecins', 'Pharmaciens'],
-    skills: {
-      first_aid: 60,
-      medicine: 70,
-      psychology: 20,
-      science_biology: 40,
-      language_latin: 40,
-      credit_rating: 50,
-    },
-    skillPoints: 'EDU × 4',
+    description: 'Praticien de la médecine moderne. Peut soigner les blessures et diagnostiquer les maladies.',
+    creditRating: [30, 80],
+    suggestedContacts: ['Hôpitaux', 'Autres médecins', 'Pharmaciens', 'Morgue'],
+    occupationSkills: [
+      'first_aid',
+      'medicine',
+      'psychology',
+      'science_biology',
+      'science_pharmacy',
+      'language_latin',
+      'spot_hidden',
+      'accounting'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['science_chemistry', 'persuade', 'reputation'],
+    era: 'Any',
   },
   {
+    id: 'professor',
     name: 'Professeur',
-    description: 'Enseignant universitaire et chercheur',
+    description: 'Enseignant universitaire et chercheur. Spécialiste dans un domaine académique.',
     creditRating: [20, 70],
-    suggestedContacts: ['Université', 'Étudiants', 'Autres académiques'],
-    skills: {
-      library_use: 60,
-      language_other: 50,
-      psychology: 20,
-      credit_rating: 20,
-    },
-    skillPoints: 'EDU × 4',
+    suggestedContacts: ['Université', 'Étudiants', 'Chercheurs', 'Bibliothèques'],
+    occupationSkills: [
+      'library_use',
+      'language_other',
+      'language_own',
+      'psychology',
+      'persuade',
+      'history',
+      'science_specialty',
+      'spot_hidden'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['anthropology', 'archaeology', 'natural_world'],
+    era: 'Any',
   },
   {
+    id: 'journalist',
     name: 'Journaliste',
-    description: 'Reporter et enquêteur de presse',
+    description: 'Reporter et enquêteur de presse. Toujours à la recherche du prochain scoop.',
     creditRating: [9, 30],
-    suggestedContacts: ['Presse', 'Police', 'Sources diverses'],
-    skills: {
-      art_craft_photography: 40,
-      fast_talk: 50,
-      history: 40,
-      library_use: 40,
-      listen: 40,
-      persuade: 50,
-      psychology: 50,
-      credit_rating: 9,
-    },
-    skillPoints: 'EDU × 4',
+    suggestedContacts: ['Rédaction', 'Police', 'Politiciens', 'Milieu criminel'],
+    occupationSkills: [
+      'art_craft_photography',
+      'history',
+      'library_use',
+      'language_own',
+      'fast_talk',
+      'persuade',
+      'psychology',
+      'stealth'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['spot_hidden', 'listen', 'charm'],
+    era: 'Any',
   },
   {
+    id: 'private_investigator',
     name: 'Détective Privé',
-    description: 'Enquêteur privé professionnel',
+    description: 'Enquêteur privé professionnel. Expert en filature et enquêtes discrètes.',
     creditRating: [9, 30],
-    suggestedContacts: ['Police', 'Clients', 'Informateurs'],
-    skills: {
-      art_craft: 20,
-      disguise: 20,
-      fast_talk: 40,
-      firearms: 45,
-      law: 30,
-      library_use: 30,
-      listen: 50,
-      locksmith: 20,
-      psychology: 45,
-      spot: 60,
-      stealth: 50,
-      credit_rating: 9,
-    },
-    skillPoints: 'EDU × 4',
+    suggestedContacts: ['Police', 'Avocats', 'Clients fortunés', 'Informateurs'],
+    occupationSkills: [
+      'art_craft_photography',
+      'disguise',
+      'law',
+      'library_use',
+      'psychology',
+      'spot_hidden',
+      'stealth',
+      'fast_talk'
+    ],
+    skillPointsFormula: 'EDU × 2 + (STR × 2 ou DEX × 2)',
+    recommendedSkills: ['firearms_handgun', 'locksmith', 'listen'],
+    era: 'Any',
   },
   {
+    id: 'occultist',
     name: 'Occultiste',
-    description: 'Étudiant des mystères surnaturels',
+    description: 'Étudiant des mystères surnaturels et des sciences occultes. Dangereux pour la sanité mentale.',
     creditRating: [9, 65],
-    suggestedContacts: ['Sociétés secrètes', 'Autres occultistes', 'Antiquaires'],
-    skills: {
-      anthropology: 20,
-      history: 40,
-      library_use: 60,
-      occult: 70,
-      language_other: 25,
-      credit_rating: 9,
-    },
-    skillPoints: 'EDU × 4',
+    suggestedContacts: ['Sociétés secrètes', 'Autres occultistes', 'Antiquaires', 'Bibliothèques privées'],
+    occupationSkills: [
+      'anthropology',
+      'history',
+      'library_use',
+      'occult',
+      'language_other',
+      'psychology',
+      'science_astronomy',
+      'persuade'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['art_craft_writing', 'charm', 'spot_hidden'],
+    era: 'Any',
+  },
+  {
+    id: 'police_detective',
+    name: 'Inspecteur de Police',
+    description: 'Détective de la police criminelle. Autorité légale et accès aux dossiers officiels.',
+    creditRating: [20, 50],
+    suggestedContacts: ['Police', 'Médecins légistes', 'Procureurs', 'Journalistes'],
+    occupationSkills: [
+      'art_craft_acting',
+      'disguise',
+      'firearms_handgun',
+      'law',
+      'listen',
+      'psychology',
+      'spot_hidden',
+      'intimidate'
+    ],
+    skillPointsFormula: 'EDU × 2 + (STR × 2 ou DEX × 2)',
+    recommendedSkills: ['drive_auto', 'fighting_brawl', 'first_aid'],
+    era: 'Any',
+  },
+  {
+    id: 'archaeologist',
+    name: 'Archéologue',
+    description: 'Expert en civilisations anciennes et fouilles archéologiques.',
+    creditRating: [10, 40],
+    suggestedContacts: ['Universités', 'Musées', 'Collectionneurs', 'Expéditions'],
+    occupationSkills: [
+      'archaeology',
+      'anthropology',
+      'history',
+      'library_use',
+      'spot_hidden',
+      'mechanical_repair',
+      'navigate',
+      'language_other'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['climb', 'natural_world', 'survival'],
+    era: '1920s',
+  },
+  {
+    id: 'dilettante',
+    name: 'Dilettante',
+    description: 'Personne fortunée vivant de ses rentes. Temps libre pour s\'adonner à ses passions.',
+    creditRating: [50, 99],
+    suggestedContacts: ['Haute société', 'Artistes', 'Politiciens', 'Clubs privés'],
+    occupationSkills: [
+      'art_craft',
+      'firearms_rifle',
+      'language_other',
+      'ride',
+      'charm',
+      'persuade',
+      'credit_rating',
+      'any_one'
+    ],
+    skillPointsFormula: 'EDU × 2 + APP × 2',
+    recommendedSkills: ['history', 'natural_world', 'navigate'],
+    era: '1920s',
+  },
+  {
+    id: 'alienist',
+    name: 'Aliéniste',
+    description: 'Précurseur du psychiatre moderne. Spécialiste des troubles mentaux.',
+    creditRating: [10, 60],
+    suggestedContacts: ['Asiles', 'Autres médecins', 'Universités', 'Police'],
+    occupationSkills: [
+      'law',
+      'listen',
+      'medicine',
+      'language_other',
+      'psychoanalysis',
+      'psychology',
+      'science_biology',
+      'science_pharmacy'
+    ],
+    skillPointsFormula: 'EDU × 4',
+    recommendedSkills: ['persuade', 'spot_hidden', 'history'],
+    era: '1920s',
   },
 ];
 
@@ -202,6 +338,72 @@ export const SANITY_PRESETS: SanityPreset[] = [
 ];
 
 // Common phobias that can develop from sanity loss
+// Calculate occupation skill points based on formula
+export function calculateOccupationPoints(
+  formula: string,
+  characteristics: any
+): number {
+  const { strength, constitution, size, dexterity, appearance, intelligence, power, education } = characteristics;
+  
+  // Parse common formulas
+  if (formula === 'EDU × 4') return education * 4;
+  if (formula === 'EDU × 2 + APP × 2') return education * 2 + appearance * 2;
+  if (formula === 'EDU × 2 + DEX × 2') return education * 2 + dexterity * 2;
+  if (formula === 'EDU × 2 + STR × 2') return education * 2 + strength * 2;
+  if (formula === 'EDU × 2 + (STR × 2 ou DEX × 2)') {
+    return education * 2 + Math.max(strength * 2, dexterity * 2);
+  }
+  
+  // Default to EDU × 4 if formula not recognized
+  return education * 4;
+}
+
+// Age modifiers for character creation
+export const AGE_MODIFIERS = {
+  '15-19': {
+    description: 'Jeune adulte',
+    modifiers: { STR: -5, SIZ: -5, EDU: -5 },
+    educationChecks: 0,
+    luckBonus: true, // Roll twice, keep higher
+  },
+  '20-39': {
+    description: 'Adulte',
+    modifiers: {},
+    educationChecks: 1,
+    luckBonus: false,
+  },
+  '40-49': {
+    description: 'Âge mûr',
+    modifiers: { STR: -5, CON: -5, DEX: -5, APP: -5 },
+    educationChecks: 2,
+    luckBonus: false,
+  },
+  '50-59': {
+    description: 'Quinquagénaire',
+    modifiers: { STR: -10, CON: -10, DEX: -10, APP: -10 },
+    educationChecks: 3,
+    luckBonus: false,
+  },
+  '60-69': {
+    description: 'Sexagénaire',
+    modifiers: { STR: -20, CON: -20, DEX: -20, APP: -15 },
+    educationChecks: 4,
+    luckBonus: false,
+  },
+  '70-79': {
+    description: 'Septuagénaire',
+    modifiers: { STR: -40, CON: -40, DEX: -40, APP: -20 },
+    educationChecks: 4,
+    luckBonus: false,
+  },
+  '80+': {
+    description: 'Octogénaire',
+    modifiers: { STR: -80, CON: -80, DEX: -80, APP: -25 },
+    educationChecks: 4,
+    luckBonus: false,
+  },
+};
+
 export const PHOBIAS = [
   'Arachnophobie', // Peur des araignées
   'Claustrophobie', // Peur des espaces clos
