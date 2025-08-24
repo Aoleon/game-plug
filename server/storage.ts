@@ -142,15 +142,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteGameSession(id: string): Promise<void> {
-    // Delete all related data first
+    // Delete all related data first in the correct order
+    
+    // 1. Delete chapter events for all chapters in this session
+    const sessionChapters = await db.select().from(chapters).where(eq(chapters.sessionId, id));
+    for (const chapter of sessionChapters) {
+      await db.delete(chapterEvents).where(eq(chapterEvents.chapterId, chapter.id));
+    }
+    
+    // 2. Delete all chapters
+    await db.delete(chapters).where(eq(chapters.sessionId, id));
+    
+    // 3. Delete character-related data
     const sessionCharacters = await this.getCharactersBySession(id);
     for (const character of sessionCharacters) {
       await db.delete(sanityConditions).where(eq(sanityConditions.characterId, character.id));
       await db.delete(activeEffects).where(eq(activeEffects.characterId, character.id));
       await db.delete(rollHistory).where(eq(rollHistory.characterId, character.id));
     }
+    
+    // 4. Delete characters and roll history
     await db.delete(characters).where(eq(characters.sessionId, id));
     await db.delete(rollHistory).where(eq(rollHistory.sessionId, id));
+    
+    // 5. Finally delete the session
     await db.delete(gameSessions).where(eq(gameSessions.id, id));
   }
 
