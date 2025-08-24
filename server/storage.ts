@@ -48,6 +48,7 @@ export interface IStorage {
   getCharacter(id: string): Promise<Character | undefined>;
   getCharactersBySession(sessionId: string): Promise<Character[]>;
   getCharactersByUser(userId: string): Promise<Character[]>;
+  getAllCharacters(): Promise<Character[]>;
   updateCharacter(id: string, data: Partial<InsertCharacter>): Promise<Character>;
   deleteCharacter(id: string): Promise<void>;
   
@@ -210,6 +211,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(characters)
       .where(and(eq(characters.userId, userId), eq(characters.isActive, true)))
+      .orderBy(desc(characters.createdAt));
+  }
+
+  async getAllCharacters(): Promise<Character[]> {
+    return await db
+      .select()
+      .from(characters)
+      .where(eq(characters.isActive, true))
       .orderBy(desc(characters.createdAt));
   }
 

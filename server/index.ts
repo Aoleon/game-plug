@@ -1,10 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
+import { autoMigrateAvatarsOnStartup } from "./auto-migrate";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Serve static avatar files
+app.use('/avatars', express.static(path.join(process.cwd(), 'public', 'avatars')));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -67,5 +72,7 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    // Run avatar migration in background after server starts
+    autoMigrateAvatarsOnStartup().catch(console.error);
   });
 })();

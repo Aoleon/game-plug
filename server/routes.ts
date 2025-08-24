@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription } from "./openai";
+import { migrateExistingAvatars } from "./migrate-avatars";
 import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
 import {
   insertGameSessionSchema,
@@ -26,8 +27,8 @@ function generateSessionCode(): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for deployment
-  app.get('/', (req, res) => {
+  // Health check endpoint for deployment  
+  app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is running' });
   });
 
@@ -571,6 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Description and character name are required" });
       }
 
+      // Generate without character ID for preview
       const { url } = await generateCharacterAvatar(description, characterName, occupation, age);
 
       res.json({ avatarUrl: url });
@@ -631,7 +633,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description, 
         character.name, 
         character.occupation || undefined, 
-        character.age || undefined
+        character.age || undefined,
+        character.id
       );
       
       // Update character with avatar URL
@@ -726,7 +729,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description, 
             character.name, 
             character.occupation || undefined, 
-            character.age || undefined
+            character.age || undefined,
+            character.id
           );
           
           // Update character with avatar URL
@@ -765,6 +769,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating avatars:", error);
       res.status(500).json({ message: "Failed to generate avatars" });
+    }
+  });
+
+  // Migrate existing avatars from external URLs to local storage
+  app.post('/api/migrate-avatars', isAuthenticated, async (req: any, res) => {
+    try {
+      // Optional: You might want to restrict this to admin users
+      // For now, we'll allow any authenticated user to trigger migration
+      
+      console.log(`Avatar migration triggered by user ${req.user.claims.sub}`);
+      
+      const result = await migrateExistingAvatars();
+      
+      res.json({
+        message: "Avatar migration completed",
+        ...result
+      });
+    } catch (error) {
+      console.error("Error during avatar migration:", error);
+      res.status(500).json({ message: "Failed to migrate avatars" });
     }
   });
 

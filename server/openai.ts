@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { downloadAndSaveImage } from "./image-storage";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -9,7 +10,8 @@ export async function generateCharacterAvatar(
   description: string, 
   characterName: string, 
   occupation?: string, 
-  age?: number
+  age?: number,
+  characterId?: string
 ): Promise<{ url: string }> {
   // Build a rich, immersive prompt for Lovecraftian 1920s atmosphere
   const occupationContext = occupation ? `working as a ${occupation.toLowerCase()}, ` : '';
@@ -31,7 +33,20 @@ Vintage 1920s portrait photograph with dramatic noir lighting. ${occupation ? `D
       quality: "standard", // Standard quality for faster generation
     });
 
-    return { url: response.data?.[0]?.url || "" };
+    const tempUrl = response.data?.[0]?.url || "";
+    
+    // If we have a character ID, download and save the image permanently
+    if (tempUrl && characterId) {
+      try {
+        const permanentUrl = await downloadAndSaveImage(tempUrl, characterId);
+        return { url: permanentUrl };
+      } catch (error) {
+        console.error("Failed to save image permanently, returning temporary URL:", error);
+        return { url: tempUrl };
+      }
+    }
+
+    return { url: tempUrl };
   } catch (error) {
     console.error("Error generating character avatar:", error);
     throw new Error("Failed to generate character avatar");
