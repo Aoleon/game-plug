@@ -39,11 +39,14 @@ export default function CharacterSheet() {
   });
   
   // Fetch roll history for this character
-  const { data: characterRolls } = useQuery<any[]>({
+  const { data: sessionRolls } = useQuery<any[]>({
     queryKey: ["/api/sessions", character?.sessionId, "rolls"],
     retry: false,
     enabled: !!character?.sessionId,
   });
+  
+  // Filter rolls for this specific character
+  const characterRolls = sessionRolls?.filter(roll => roll.characterId === characterId) || [];
 
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);

@@ -139,11 +139,15 @@ export default function GMDashboard() {
         if (!character) continue;
 
         let updateData: any = {};
+        let rollType = 'general';
+        let rollDescription = effect.description || '';
         
         switch (effect.effectType) {
           case 'sanity':
             const newSanity = Math.max(0, character.sanity - effect.value);
             updateData.sanity = newSanity;
+            rollType = 'sanity';
+            rollDescription = `Perte de sanité: ${effect.value} points`;
             
             // Check for madness conditions
             if (effect.value >= 5) {
@@ -161,15 +165,40 @@ export default function GMDashboard() {
             
           case 'health':
             updateData.hitPoints = Math.max(0, character.hitPoints - effect.value);
+            rollType = 'damage';
+            rollDescription = `Dégâts: ${effect.value} points`;
             break;
             
           case 'luck':
             updateData.luck = Math.max(0, character.luck - effect.value);
+            rollType = 'luck';
+            rollDescription = `Test de chance: ${effect.value}`;
             break;
             
           case 'magic':
             updateData.magicPoints = Math.max(0, character.magicPoints - effect.value);
+            rollType = 'magic';
+            rollDescription = `Magie: ${effect.value} points`;
             break;
+        }
+        
+        // Record roll in history
+        if (effect.value !== undefined && sessionId) {
+          try {
+            await apiRequest("POST", "/api/rolls", {
+              sessionId,
+              characterId: charId,
+              rollType,
+              formula: effect.formula || `${effect.value}`,
+              result: effect.value,
+              skillName: effect.effectType,
+              outcome: effect.value >= 5 ? 'fail' : 'success',
+              description: rollDescription,
+              isSecret: false
+            });
+          } catch (error) {
+            console.error('Failed to record roll:', error);
+          }
         }
         
         // Update character
@@ -188,8 +217,9 @@ export default function GMDashboard() {
         }
       }
       
-      // Refresh character data
+      // Refresh character data and roll history
       queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "rolls"] });
       
     } catch (error) {
       console.error("Error applying effects:", error);
@@ -318,6 +348,30 @@ export default function GMDashboard() {
         };
         setRollResults(prev => [newRoll, ...prev.slice(0, 9)]);
         
+        // Determine roll type based on effect type
+        let rollType = 'general';
+        if (result.effectType === 'sanity') rollType = 'sanity';
+        else if (result.effectType === 'health') rollType = 'damage';
+        else if (result.effectType === 'luck') rollType = 'luck';
+        else if (result.effectType === 'magic') rollType = 'magic';
+        
+        // Record roll in database
+        try {
+          await apiRequest("POST", "/api/rolls", {
+            sessionId,
+            characterId: charId,
+            rollType,
+            formula: result.formula,
+            result: value,
+            skillName: result.effectType || 'general',
+            outcome: value === 1 ? 'critical' : value >= 96 ? 'fumble' : 'normal',
+            description: result.description || '',
+            isSecret: result.isSecret || false
+          });
+        } catch (error) {
+          console.error('Failed to record roll in database:', error);
+        }
+        
         // Record roll in chapter event history
         try {
           const chapters = await queryClient.fetchQuery({
@@ -361,6 +415,9 @@ export default function GMDashboard() {
         description: result.description
       });
     }
+    
+    // Refresh roll history
+    queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "rolls"] });
   };
 
   const handleSanityPreset = (loss: string) => {
