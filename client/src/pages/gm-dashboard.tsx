@@ -53,6 +53,7 @@ export default function GMDashboard() {
   const [deleteCharacterId, setDeleteCharacterId] = useState<string | null>(null);
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
+  const [forceRegenerateAvatars, setForceRegenerateAvatars] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -264,20 +265,22 @@ export default function GMDashboard() {
   const handleGenerateAllAvatars = async () => {
     setIsGeneratingAvatars(true);
     try {
-      const response = await apiRequest("POST", `/api/sessions/${sessionId}/generate-all-avatars`);
+      const response = await apiRequest("POST", `/api/sessions/${sessionId}/generate-all-avatars`, {
+        forceRegenerate: forceRegenerateAvatars
+      });
       const data = await response.json();
       
       if (data.generated > 0) {
         toast({
           title: "Portraits générés",
-          description: `${data.generated} portrait(s) ont été créés avec succès.`,
+          description: `${data.generated} portrait(s) ont été ${forceRegenerateAvatars ? 'régénérés' : 'créés'} avec succès.`,
         });
         // Refresh character list to show new avatars
         queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
       } else {
         toast({
           title: "Aucun portrait à générer",
-          description: "Tous les personnages ont déjà un portrait.",
+          description: forceRegenerateAvatars ? "Aucun personnage dans la session." : "Tous les personnages ont déjà un portrait.",
         });
       }
       
@@ -460,15 +463,33 @@ export default function GMDashboard() {
               </div>
               <div className="flex items-center space-x-4">
                 <ConnectionIndicator isConnected={isConnected} />
-                <Button
-                  onClick={handleGenerateAllAvatars}
-                  disabled={isGeneratingAvatars}
-                  className="bg-eldritch-green hover:bg-green-800 text-bone-white mr-2"
-                  data-testid="button-generate-all-avatars"
-                >
-                  <Image className="mr-2 h-4 w-4" />
-                  {isGeneratingAvatars ? "Génération..." : "Générer Portraits"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleGenerateAllAvatars}
+                    disabled={isGeneratingAvatars}
+                    className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                    data-testid="button-generate-all-avatars"
+                  >
+                    <Image className="mr-2 h-4 w-4" />
+                    {isGeneratingAvatars ? "Génération..." : forceRegenerateAvatars ? "Régénérer Portraits" : "Générer Portraits"}
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      id="force-regenerate"
+                      checked={forceRegenerateAvatars}
+                      onChange={(e) => setForceRegenerateAvatars(e.target.checked)}
+                      className="h-4 w-4 rounded border-aged-gold bg-cosmic-void text-eldritch-green focus:ring-eldritch-green"
+                      data-testid="checkbox-force-regenerate"
+                    />
+                    <label 
+                      htmlFor="force-regenerate" 
+                      className="text-xs text-aged-parchment cursor-pointer whitespace-nowrap"
+                    >
+                      Forcer régénération
+                    </label>
+                  </div>
+                </div>
                 <Button 
                   onClick={() => handleGMRoll("1d100")}
                   className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white"

@@ -526,6 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.params.sessionId;
       const userId = req.user.claims.sub;
+      const { forceRegenerate = false } = req.body;
       
       // Check if user is GM
       const session = await storage.getGameSession(sessionId);
@@ -533,11 +534,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only the GM can generate avatars for all characters" });
       }
       
-      // Get all characters in the session without avatars
+      // Get all characters in the session
       const characters = await storage.getCharactersBySession(sessionId);
-      const charactersWithoutAvatars = characters.filter((c: any) => !c.avatarUrl);
       
-      if (charactersWithoutAvatars.length === 0) {
+      // Filter characters based on forceRegenerate option
+      const charactersToGenerate = forceRegenerate 
+        ? characters 
+        : characters.filter((c: any) => !c.avatarUrl);
+      
+      if (charactersToGenerate.length === 0) {
         return res.json({ 
           message: "All characters already have avatars", 
           generated: 0 
@@ -547,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       const errors = [];
       
-      for (const character of charactersWithoutAvatars) {
+      for (const character of charactersToGenerate) {
         try {
           // Build description based on character data
           let description = "";
@@ -698,47 +703,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const effect = await storage.addActiveEffect(effectData);
       
-      // If effect is damage or sanity loss, update character and apply automatic statuses
+      // Update character stats based on effect type
       const character = await storage.getCharacter(req.params.id);
-      if (character && (effectData.type === 'damage' || effectData.type === 'sanity_loss')) {
+      if (character) {
         const value = parseInt(effectData.value || '0');
+        let updateData: any = {};
+        let shouldApplyAutoEffects = false;
         
         if (effectData.type === 'damage' && value !== 0) {
           // Apply damage to HP
-          const newHp = Math.max(0, character.hitPoints - Math.abs(value));
-          await storage.updateCharacter(req.params.id, { hitPoints: newHp });
-          
-          // Apply automatic status effects
-          await applyAutomaticStatusEffects({
-            characterId: character.id,
-            currentHp: newHp,
-            maxHp: character.maxHitPoints,
-            currentSanity: character.sanity,
-            maxSanity: character.maxSanity,
-            strength: character.strength,
-            constitution: character.constitution,
-            size: character.size
-          });
+          updateData.hitPoints = Math.max(0, character.hitPoints - Math.abs(value));
+          shouldApplyAutoEffects = true;
         } else if (effectData.type === 'sanity_loss' && value !== 0) {
           // Apply sanity loss
-          const newSanity = Math.max(0, character.sanity - Math.abs(value));
-          await storage.updateCharacter(req.params.id, { sanity: newSanity });
+          updateData.sanity = Math.max(0, character.sanity - Math.abs(value));
+          shouldApplyAutoEffects = true;
           
           // Check if temporary insanity should be applied
           if (Math.abs(value) >= 5) {
             await applyTemporaryInsanity(character.id);
           }
-          
-          // Apply automatic status effects
+        } else if (effectData.type === 'buff') {
+          // Handle buffs based on the effect name
+          if (effectData.name?.toLowerCase().includes('soin') || 
+              effectData.name?.toLowerCase().includes('heal') ||
+              effectData.name?.toLowerCase().includes('pv') ||
+              effectData.name?.toLowerCase().includes('vie')) {
+            // Healing buff - add HP
+            updateData.hitPoints = Math.min(character.maxHitPoints, character.hitPoints + Math.abs(value));
+            shouldApplyAutoEffects = true;
+          } else if (effectData.name?.toLowerCase().includes('sanité') || 
+                     effectData.name?.toLowerCase().includes('sanity')) {
+            // Sanity restoration
+            updateData.sanity = Math.min(character.maxSanity, character.sanity + Math.abs(value));
+            shouldApplyAutoEffects = true;
+          } else if (effectData.name?.toLowerCase().includes('magie') || 
+                     effectData.name?.toLowerCase().includes('magic')) {
+            // Magic points restoration
+            updateData.magicPoints = Math.min(character.maxMagicPoints, character.magicPoints + Math.abs(value));
+          } else if (effectData.name?.toLowerCase().includes('chance') || 
+                     effectData.name?.toLowerCase().includes('luck')) {
+            // Luck increase (temporary)
+            updateData.luck = Math.min(99, character.luck + Math.abs(value));
+          }
+        }
+        
+        // Update character if there are changes
+        if (Object.keys(updateData).length > 0) {
+          await storage.updateCharacter(req.params.id, updateData);
+        }
+        
+        // Apply automatic status effects if HP or Sanity changed
+        if (shouldApplyAutoEffects) {
+          const updatedChar = { ...character, ...updateData };
           await applyAutomaticStatusEffects({
             characterId: character.id,
-            currentHp: character.hitPoints,
-            maxHp: character.maxHitPoints,
-            currentSanity: newSanity,
-            maxSanity: character.maxSanity,
-            strength: character.strength,
-            constitution: character.constitution,
-            size: character.size
+            currentHp: updatedChar.hitPoints,
+            maxHp: updatedChar.maxHitPoints,
+            currentSanity: updatedChar.sanity,
+            maxSanity: updatedChar.maxSanity,
+            strength: updatedChar.strength,
+            constitution: updatedChar.constitution,
+            size: updatedChar.size
           });
         }
       }
