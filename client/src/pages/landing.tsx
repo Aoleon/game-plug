@@ -9,7 +9,7 @@ export default function Landing() {
       <div className="relative bg-gradient-to-b from-cosmic-void to-deep-black">
         <div className="max-w-4xl mx-auto px-4 py-20 text-center">
           <h1 className="font-cinzel text-6xl md:text-8xl font-bold text-aged-gold mb-6">
-            L'Appel de Cthulhu
+            Rôle Plug
           </h1>
           <p className="font-crimson text-xl md:text-2xl text-aged-parchment mb-8 max-w-2xl mx-auto">
             Plongez dans l'univers cosmique de H.P. Lovecraft. Créez vos investigateurs, 

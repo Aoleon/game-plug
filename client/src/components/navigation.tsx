@@ -19,7 +19,7 @@ export default function Navigation() {
             <div className="flex items-center space-x-4">
               <Link href="/">
                 <h1 className="font-cinzel text-xl font-bold text-aged-gold hover:text-bone-white transition-colors">
-                  L'Appel de Cthulhu
+                  Rôle Plug
                 </h1>
               </Link>
               <div className="hidden md:flex space-x-4 text-sm font-source">

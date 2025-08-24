@@ -1,6 +1,6 @@
 # Overview
 
-This is a Call of Cthulhu 7th Edition digital tabletop application that enables players to create investigators, manage character sheets, and run game sessions with real-time GM tools. The application features a Lovecraftian-themed UI with AI-generated character avatars, comprehensive dice rolling mechanics, sanity tracking, and session management capabilities.
+Rôle Plug est une plateforme de jeu de rôle numérique pour Call of Cthulhu 7th Edition qui permet aux joueurs de créer des investigateurs, gérer des fiches de personnages, et diriger des sessions avec des outils MJ en temps réel. L'application propose une interface thématique lovecraftienne avec avatars de personnages générés par IA, mécaniques de jets de dés complètes, suivi de sanité mentale, et gestion de sessions.
 
 # User Preferences
 
