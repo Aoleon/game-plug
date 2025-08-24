@@ -58,6 +58,12 @@ export default function GMDashboard() {
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
   const [forceRegenerateAvatars, setForceRegenerateAvatars] = useState(false);
   
+  // Sanity modal states
+  const [sanityModalOpen, setSanityModalOpen] = useState(false);
+  const [selectedCharacterForSanity, setSelectedCharacterForSanity] = useState<string | null>(null);
+  const [sanityChangeType, setSanityChangeType] = useState<'loss' | 'gain'>('loss');
+  const [sanityChangeValue, setSanityChangeValue] = useState<string>('');
+  
   // Inventory management states
   const [inventoryModalOpen, setInventoryModalOpen] = useState(false);
   const [selectedCharacterForInventory, setSelectedCharacterForInventory] = useState<string | null>(null);
@@ -443,6 +449,101 @@ export default function GMDashboard() {
     setEffectType(type);
     setEffectModalOpen(true);
   };
+  
+  const openSanityModal = (characterId: string) => {
+    setSelectedCharacterForSanity(characterId);
+    setSanityChangeValue('');
+    setSanityChangeType('loss');
+    setSanityModalOpen(true);
+  };
+  
+  const applySanityChange = async () => {
+    if (!selectedCharacterForSanity || !sanityChangeValue) return;
+    
+    const character = characters.find(c => c.id === selectedCharacterForSanity);
+    if (!character) return;
+    
+    try {
+      let changeAmount = 0;
+      
+      // Parse dice formula or direct value
+      if (sanityChangeValue.includes('d')) {
+        const result = rollDice(sanityChangeValue);
+        changeAmount = result.total;
+        
+        // Play dice sound
+        playRoll();
+        
+        // Log the roll
+        const rollResult = {
+          result: changeAmount,
+          dice: sanityChangeValue,
+          timestamp: new Date(),
+          character: character.name
+        };
+        setRollResults(prev => [rollResult, ...prev].slice(0, 10));
+        
+        // Send WebSocket message
+        if (isConnected) {
+          sendMessage('roll_result', {
+            sessionId,
+            result: changeAmount,
+            dice: sanityChangeValue,
+            characterName: character.name,
+            rollType: 'sanity',
+            isSecret: false
+          });
+        }
+      } else {
+        changeAmount = parseInt(sanityChangeValue) || 0;
+      }
+      
+      const newSanity = sanityChangeType === 'loss' 
+        ? Math.max(0, character.sanity - changeAmount)
+        : Math.min(character.maxSanity, character.sanity + changeAmount);
+      
+      // Apply sanity change
+      await apiRequest("PATCH", `/api/characters/${selectedCharacterForSanity}`, {
+        sanity: newSanity
+      });
+      
+      // Check for sanity conditions if it's a loss
+      if (sanityChangeType === 'loss' && newSanity < character.maxSanity * 0.2) {
+        const shouldAddPhobia = Math.random() < 0.5;
+        const conditionList = shouldAddPhobia ? PHOBIAS : MANIAS;
+        const randomCondition = conditionList[Math.floor(Math.random() * conditionList.length)];
+        
+        await apiRequest("POST", `/api/characters/${selectedCharacterForSanity}/sanity-conditions`, {
+          type: shouldAddPhobia ? 'phobia' : 'mania',
+          name: randomCondition,
+          description: `Développé suite à une perte de sanité mentale importante`
+        });
+        
+        toast({
+          title: shouldAddPhobia ? "Nouvelle Phobie" : "Nouvelle Manie",
+          description: `${character.name} développe: ${randomCondition}`,
+          variant: "destructive",
+        });
+      }
+      
+      // Refresh character data
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+      
+      toast({
+        title: sanityChangeType === 'loss' ? "Perte de Sanité" : "Gain de Sanité",
+        description: `${character.name} ${sanityChangeType === 'loss' ? 'perd' : 'gagne'} ${changeAmount} points de sanité mentale.`,
+      });
+      
+      setSanityModalOpen(false);
+      setSanityChangeValue('');
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'appliquer le changement de sanité.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const applyEnvironmentalEffect = async (effectType: 'blessing' | 'curse') => {
     try {
@@ -720,10 +821,7 @@ export default function GMDashboard() {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => toast({
-                      title: "Utilisez le panneau de jets",
-                      description: "Sélectionnez ce personnage dans le panneau de jets avec effets."
-                    })}
+                    onClick={() => openSanityModal(character.id)}
                     className="bg-dark-crimson hover:bg-blood-burgundy text-bone-white text-xs"
                     data-testid={`button-apply-sanity-loss-${character.id}`}
                   >
@@ -1377,6 +1475,115 @@ export default function GMDashboard() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        {/* Sanity Management Modal */}
+        <Dialog open={sanityModalOpen} onOpenChange={setSanityModalOpen}>
+          <DialogContent className="bg-charcoal border-aged-gold text-bone-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Gestion de la Sanité Mentale
+              </DialogTitle>
+              <DialogDescription className="text-aged-parchment">
+                {selectedCharacterForSanity && characters.find(c => c.id === selectedCharacterForSanity)?.name}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Current Sanity Display */}
+              {selectedCharacterForSanity && (() => {
+                const character = characters.find(c => c.id === selectedCharacterForSanity);
+                if (!character) return null;
+                return (
+                  <div className="bg-cosmic-void border border-aged-gold rounded p-3 text-center">
+                    <div className="text-2xl font-bold text-bone-white">
+                      {character.sanity} / {character.maxSanity}
+                    </div>
+                    <div className="text-sm text-aged-parchment">Sanité Actuelle</div>
+                  </div>
+                );
+              })()}
+              
+              {/* Change Type Selection */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={() => setSanityChangeType('loss')}
+                  variant={sanityChangeType === 'loss' ? 'default' : 'outline'}
+                  className={sanityChangeType === 'loss' 
+                    ? 'bg-blood-burgundy hover:bg-dark-crimson text-bone-white' 
+                    : 'border-aged-gold text-aged-gold hover:bg-aged-gold/10'}
+                >
+                  <Minus className="mr-2 h-4 w-4" />
+                  Perte
+                </Button>
+                <Button
+                  onClick={() => setSanityChangeType('gain')}
+                  variant={sanityChangeType === 'gain' ? 'default' : 'outline'}
+                  className={sanityChangeType === 'gain' 
+                    ? 'bg-eldritch-green hover:bg-green-800 text-bone-white' 
+                    : 'border-aged-gold text-aged-gold hover:bg-aged-gold/10'}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Gain
+                </Button>
+              </div>
+              
+              {/* Sanity Presets (for loss only) */}
+              {sanityChangeType === 'loss' && (
+                <div>
+                  <label className="block text-sm font-source text-aged-parchment mb-2">Presets Call of Cthulhu</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SANITY_PRESETS.map((preset) => (
+                      <Button
+                        key={preset.name}
+                        onClick={() => setSanityChangeValue(preset.formula)}
+                        variant="outline"
+                        className="border-aged-gold text-aged-gold hover:bg-aged-gold/10 text-xs h-auto flex flex-col p-2"
+                      >
+                        <div className="font-semibold">{preset.name}</div>
+                        <div className="text-aged-parchment">{preset.formula}</div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Custom Value Input */}
+              <div>
+                <label className="block text-sm font-source text-aged-parchment mb-2">
+                  Valeur {sanityChangeType === 'loss' ? 'de perte' : 'de gain'}
+                </label>
+                <Input
+                  value={sanityChangeValue}
+                  onChange={(e) => setSanityChangeValue(e.target.value)}
+                  placeholder="Ex: 1d10, 2d6+1, ou 5"
+                  className="bg-cosmic-void border-aged-gold text-bone-white"
+                />
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSanityModalOpen(false)}
+                  className="border-aged-gold text-aged-gold hover:bg-aged-gold/10"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={applySanityChange}
+                  disabled={!sanityChangeValue}
+                  className={sanityChangeType === 'loss' 
+                    ? 'bg-blood-burgundy hover:bg-dark-crimson text-bone-white' 
+                    : 'bg-eldritch-green hover:bg-green-800 text-bone-white'}
+                >
+                  <Brain className="mr-2 h-4 w-4" />
+                  Appliquer
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
