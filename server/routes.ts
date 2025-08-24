@@ -297,8 +297,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // For players without auth, userId can be null
       const userId = req.user?.claims?.sub || null;
+      let { sessionId } = req.body;
+      
+      // Handle temporary session IDs or create a default session
+      if (!sessionId || sessionId === "none" || sessionId.startsWith("temp-")) {
+        // If user is authenticated, check for their sessions
+        if (userId) {
+          const defaultSessions = await storage.getGameSessionsByGM(userId);
+          
+          if (defaultSessions.length === 0) {
+            // Create a default session for this user
+            const defaultSession = await storage.createGameSession({
+              name: "Session par défaut",
+              gmId: userId,
+              code: null,
+              status: "preparation"
+            });
+            sessionId = defaultSession.id;
+          } else {
+            sessionId = defaultSessions[0].id;
+          }
+        } else {
+          // For unauthenticated users, use or create a public session
+          const publicSessions = await storage.getGameSessionsByGM(req.user?.claims?.sub || "21448396"); // Use current user or test user ID
+          
+          if (publicSessions.length === 0) {
+            // Cannot create session without valid GM ID
+            return res.status(400).json({ 
+              message: "Veuillez vous connecter ou sélectionner une session existante pour créer un personnage." 
+            });
+          }
+          sessionId = publicSessions[0].id;
+        }
+      }
+      
       const characterData = insertCharacterSchema.parse({
         ...req.body,
+        sessionId,
         userId
       });
       const character = await storage.createCharacter(characterData);
