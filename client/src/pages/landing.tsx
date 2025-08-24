@@ -29,7 +29,7 @@ export default function Landing() {
               size="lg"
               variant="outline"
               className="border-aged-gold text-aged-gold hover:bg-aged-gold/10 px-8 py-4 text-lg font-source"
-              onClick={() => window.location.href = '/join'}
+              onClick={() => window.location.pathname = '/join'}
               data-testid="button-join-session"
             >
               <Users className="mr-2 h-5 w-5" />

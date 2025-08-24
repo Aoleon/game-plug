@@ -2,6 +2,7 @@ import {
   users,
   gameSessions,
   characters,
+  chapters,
   sanityConditions,
   activeEffects,
   rollHistory,
@@ -11,6 +12,8 @@ import {
   type InsertGameSession,
   type Character,
   type InsertCharacter,
+  type Chapter,
+  type InsertChapter,
   type SanityCondition,
   type InsertSanityCondition,
   type ActiveEffect,
@@ -55,6 +58,13 @@ export interface IStorage {
   addRollHistory(roll: InsertRollHistory): Promise<RollHistory>;
   getSessionRollHistory(sessionId: string, limit?: number): Promise<RollHistory[]>;
   getCharacterRollHistory(characterId: string, limit?: number): Promise<RollHistory[]>;
+  
+  // Chapter operations
+  createChapter(chapter: InsertChapter): Promise<Chapter>;
+  getSessionChapters(sessionId: string): Promise<Chapter[]>;
+  getChapter(id: string): Promise<Chapter | undefined>;
+  updateChapter(id: string, data: Partial<InsertChapter>): Promise<Chapter>;
+  deleteChapter(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -253,6 +263,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rollHistory.characterId, characterId))
       .orderBy(desc(rollHistory.createdAt))
       .limit(limit);
+  }
+
+  // Chapter operations
+  async createChapter(chapter: InsertChapter): Promise<Chapter> {
+    const [newChapter] = await db
+      .insert(chapters)
+      .values(chapter)
+      .returning();
+    return newChapter;
+  }
+
+  async getSessionChapters(sessionId: string): Promise<Chapter[]> {
+    return await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.sessionId, sessionId))
+      .orderBy(chapters.orderIndex);
+  }
+
+  async getChapter(id: string): Promise<Chapter | undefined> {
+    const [chapter] = await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.id, id));
+    return chapter;
+  }
+
+  async updateChapter(id: string, data: Partial<InsertChapter>): Promise<Chapter> {
+    const [chapter] = await db
+      .update(chapters)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(chapters.id, id))
+      .returning();
+    return chapter;
+  }
+
+  async deleteChapter(id: string): Promise<void> {
+    await db.delete(chapters).where(eq(chapters.id, id));
   }
 }
 

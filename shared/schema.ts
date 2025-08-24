@@ -117,6 +117,19 @@ export const activeEffects = pgTable("active_effects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Chapters - subdivisions of game sessions
+export const chapters = pgTable("chapters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => gameSessions.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull().default(0),
+  status: varchar("status").default('planned'), // 'planned', 'active', 'completed'
+  notes: text("notes"), // GM notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Dice roll history
 export const rollHistory = pgTable("roll_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -146,6 +159,14 @@ export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => 
     references: [users.id],
   }),
   characters: many(characters),
+  chapters: many(chapters),
+}));
+
+export const chaptersRelations = relations(chapters, ({ one }) => ({
+  session: one(gameSessions, {
+    fields: [chapters.sessionId],
+    references: [gameSessions.id],
+  }),
 }));
 
 export const charactersRelations = relations(characters, ({ one, many }) => ({
@@ -229,6 +250,12 @@ export const insertRollHistorySchema = createInsertSchema(rollHistory).omit({
   createdAt: true,
 });
 
+export const insertChapterSchema = createInsertSchema(chapters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -242,3 +269,5 @@ export type ActiveEffect = typeof activeEffects.$inferSelect;
 export type InsertActiveEffect = z.infer<typeof insertActiveEffectSchema>;
 export type RollHistory = typeof rollHistory.$inferSelect;
 export type InsertRollHistory = z.infer<typeof insertRollHistorySchema>;
+export type Chapter = typeof chapters.$inferSelect;
+export type InsertChapter = z.infer<typeof insertChapterSchema>;

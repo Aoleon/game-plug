@@ -10,6 +10,7 @@ import {
   insertSanityConditionSchema,
   insertActiveEffectSchema,
   insertRollHistorySchema,
+  insertChapterSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -149,6 +150,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching session characters:", error);
       res.status(500).json({ message: "Failed to fetch session characters" });
+    }
+  });
+
+  // Chapter routes (GM only)
+  app.post('/api/sessions/:sessionId/chapters', isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getGameSession(req.params.sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const chapterData = insertChapterSchema.parse({
+        ...req.body,
+        sessionId: req.params.sessionId
+      });
+      const chapter = await storage.createChapter(chapterData);
+      res.json(chapter);
+    } catch (error) {
+      console.error("Error creating chapter:", error);
+      res.status(400).json({ message: "Failed to create chapter" });
+    }
+  });
+
+  app.get('/api/sessions/:sessionId/chapters', async (req, res) => {
+    try {
+      const chapters = await storage.getSessionChapters(req.params.sessionId);
+      res.json(chapters);
+    } catch (error) {
+      console.error("Error fetching chapters:", error);
+      res.status(500).json({ message: "Failed to fetch chapters" });
+    }
+  });
+
+  app.patch('/api/chapters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const chapter = await storage.getChapter(req.params.id);
+      if (!chapter) {
+        return res.status(404).json({ message: "Chapter not found" });
+      }
+      
+      const session = await storage.getGameSession(chapter.sessionId);
+      if (!session || session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const updatedChapter = await storage.updateChapter(req.params.id, req.body);
+      res.json(updatedChapter);
+    } catch (error) {
+      console.error("Error updating chapter:", error);
+      res.status(500).json({ message: "Failed to update chapter" });
+    }
+  });
+
+  app.delete('/api/chapters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const chapter = await storage.getChapter(req.params.id);
+      if (!chapter) {
+        return res.status(404).json({ message: "Chapter not found" });
+      }
+      
+      const session = await storage.getGameSession(chapter.sessionId);
+      if (!session || session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      await storage.deleteChapter(req.params.id);
+      res.json({ message: "Chapter deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+      res.status(500).json({ message: "Failed to delete chapter" });
     }
   });
 

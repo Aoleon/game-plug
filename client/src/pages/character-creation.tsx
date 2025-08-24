@@ -199,7 +199,7 @@ export default function CharacterCreation() {
       // Skills (occupation skills + default skills)
       skills: {
         ...DEFAULT_SKILLS,
-        ...(occupation?.skills || {}),
+        ...(selectedOccupation ? skillPoints : {}),
       },
       
       avatarUrl: avatarUrl || undefined,

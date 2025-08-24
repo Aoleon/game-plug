@@ -11,6 +11,7 @@ import RollHistoryVisual from "@/components/roll-history-visual";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
+import ChapterManager from "@/components/chapter-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -447,6 +448,11 @@ export default function GMDashboard() {
         {/* Unified Ambient Sound Controller */}
         <div className="mb-6">
           <UnifiedAmbientController />
+        </div>
+
+        {/* Chapter Manager */}
+        <div className="mb-6">
+          <ChapterManager sessionId={sessionId || ''} isGM={true} />
         </div>
 
         {/* Advanced GM Tools */}
