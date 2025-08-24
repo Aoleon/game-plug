@@ -246,7 +246,10 @@ export default function CharacterSheet() {
                   )}
                 </div>
                 <Button
-                  onClick={handleGenerateAvatar}
+                  onClick={() => {
+                    console.log("Button clicked!");
+                    handleGenerateAvatar();
+                  }}
                   disabled={isGeneratingAvatar}
                   className="bg-eldritch-green hover:bg-green-800 text-bone-white"
                   size="sm"
