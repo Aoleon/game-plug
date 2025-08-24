@@ -8,7 +8,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import Navigation from "@/components/navigation";
 import ConnectionIndicator from "@/components/connection-indicator";
 import RollHistoryVisual from "@/components/roll-history-visual";
-import GMSecretRoll from "@/components/gm-secret-roll";
+import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default function GMDashboard() {
   const [effectModalOpen, setEffectModalOpen] = useState(false);
   const [effectType, setEffectType] = useState<string>("");
   const [customDice, setCustomDice] = useState("");
-  const [rollResults, setRollResults] = useState<Array<{ result: number; dice: string; timestamp: Date }>>([]);
+  const [rollResults, setRollResults] = useState<Array<{ result: number; dice: string; timestamp: Date; character?: string }>>([]);
   const [isSecretRoll, setIsSecretRoll] = useState(false);
 
   // WebSocket connection for real-time updates
@@ -88,53 +88,70 @@ export default function GMDashboard() {
     enabled: !!sessionId,
   });
 
-  const applySanityLossMutation = useMutation({
-    mutationFn: async ({ characterId, loss }: { characterId: string; loss: string }) => {
-      // Parse and roll the dice
-      const diceResult = rollDice(loss);
-      
-      // Get current character to calculate new sanity
-      const character = characters.find(c => c.id === characterId);
-      if (!character) throw new Error("Character not found");
-      
-      const newSanity = Math.max(0, character.sanity - diceResult.total);
-      
-      // Update character sanity
-      await apiRequest("PATCH", `/api/characters/${characterId}`, {
-        sanity: newSanity
-      });
+  const applyEffectToCharacters = async (effect: any) => {
+    try {
+      for (const charId of effect.characterIds) {
+        const character = characters.find(c => c.id === charId);
+        if (!character) continue;
 
-      // Check for madness conditions based on sanity loss
-      if (diceResult.total >= 5) {
-        // Temporary madness - add random phobia or mania
-        const isPhobia = Math.random() > 0.5;
-        const conditionList = isPhobia ? PHOBIAS : MANIAS;
-        const randomCondition = conditionList[Math.floor(Math.random() * conditionList.length)];
+        let updateData: any = {};
         
-        await apiRequest("POST", `/api/characters/${characterId}/sanity-conditions`, {
-          type: isPhobia ? 'phobia' : 'mania',
-          name: randomCondition,
-          duration: 'temporary'
-        });
+        switch (effect.effectType) {
+          case 'sanity':
+            const newSanity = Math.max(0, character.sanity - effect.value);
+            updateData.sanity = newSanity;
+            
+            // Check for madness conditions
+            if (effect.value >= 5) {
+              const isPhobia = Math.random() > 0.5;
+              const conditionList = isPhobia ? PHOBIAS : MANIAS;
+              const randomCondition = conditionList[Math.floor(Math.random() * conditionList.length)];
+              
+              await apiRequest("POST", `/api/characters/${charId}/sanity-conditions`, {
+                type: isPhobia ? 'phobia' : 'mania',
+                name: randomCondition,
+                duration: 'temporary'
+              });
+            }
+            break;
+            
+          case 'health':
+            updateData.hitPoints = Math.max(0, character.hitPoints - effect.value);
+            break;
+            
+          case 'luck':
+            updateData.luck = Math.max(0, character.luck - effect.value);
+            break;
+            
+          case 'magic':
+            updateData.magicPoints = Math.max(0, character.magicPoints - effect.value);
+            break;
+        }
+        
+        // Update character
+        if (Object.keys(updateData).length > 0) {
+          await apiRequest("PATCH", `/api/characters/${charId}`, updateData);
+        }
+        
+        // Add to roll history if connected
+        if (isConnected) {
+          sendMessage('effect_applied', {
+            characterId: charId,
+            effectType: effect.effectType,
+            value: effect.value,
+            description: effect.description
+          });
+        }
       }
-
-      return { sanityLoss: diceResult.total, newSanity };
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Perte de sanité appliquée",
-        description: `${data.sanityLoss} points perdus. Sanité restante: ${data.newSanity}`,
-      });
+      
+      // Refresh character data
       queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'appliquer la perte de sanité.",
-        variant: "destructive",
-      });
-    },
-  });
+      
+    } catch (error) {
+      console.error("Error applying effects:", error);
+      throw error;
+    }
+  };
 
   const applyEffectMutation = useMutation({
     mutationFn: async (effectData: any) => {
@@ -201,17 +218,42 @@ export default function GMDashboard() {
     }
   };
 
-  const handleSanityPreset = (loss: string) => {
-    // Apply to all characters or show selection modal
-    if (characters.length === 1) {
-      applySanityLossMutation.mutate({ characterId: characters[0].id, loss });
-    } else {
-      // For multiple characters, you might want to show a selection modal
-      toast({
-        title: "Sélectionnez un personnage",
-        description: "Cliquez sur un personnage pour appliquer la perte de sanité.",
+  const handleRollWithEffects = (result: any) => {
+    // Handle the roll results
+    const rollEntries = Array.from(result.results.entries());
+    
+    for (const entry of rollEntries) {
+      const charId = entry[0] as string;
+      const value = entry[1] as number;
+      const character = characters.find(c => c.id === charId);
+      if (character) {
+        const newRoll = {
+          result: value,
+          dice: result.formula,
+          character: character.name,
+          timestamp: new Date()
+        };
+        setRollResults(prev => [newRoll, ...prev.slice(0, 9)]);
+      }
+    }
+    
+    // Broadcast if not secret
+    if (!result.isSecret && isConnected) {
+      sendMessage('gm_roll', {
+        formula: result.formula,
+        results: Object.fromEntries(result.results),
+        timestamp: new Date(),
+        description: result.description
       });
     }
+  };
+
+  const handleSanityPreset = (loss: string) => {
+    // This is now handled by the GMRollWithEffects component
+    toast({
+      title: "Utilisez le panneau de jets",
+      description: "Sélectionnez les personnages et utilisez le panneau de jets avec effets.",
+    });
   };
 
   const openEffectModal = (playerId: string, type: string) => {
@@ -335,7 +377,10 @@ export default function GMDashboard() {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => applySanityLossMutation.mutate({ characterId: character.id, loss: "1d4" })}
+                    onClick={() => toast({
+                      title: "Utilisez le panneau de jets",
+                      description: "Sélectionnez ce personnage dans le panneau de jets avec effets."
+                    })}
                     className="bg-dark-crimson hover:bg-blood-burgundy text-bone-white text-xs"
                     data-testid={`button-apply-sanity-loss-${character.id}`}
                   >
@@ -395,18 +440,11 @@ export default function GMDashboard() {
 
         {/* Advanced GM Tools */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          {/* Secret Roll Tool */}
-          <GMSecretRoll 
-            onRoll={(result) => {
-              handleGMRoll(result.formula, result.isSecret);
-              if (result.description) {
-                toast({
-                  title: result.isSecret ? "Jet Secret" : "Jet Public",
-                  description: `${result.description}: ${result.result}`,
-                });
-              }
-            }}
-            players={characters.map(c => ({ id: c.id, name: c.name }))}
+          {/* Roll Tool with Effects */}
+          <GMRollWithEffects
+            characters={characters}
+            onRoll={handleRollWithEffects}
+            onApplyEffect={applyEffectToCharacters}
           />
           
           {/* Narrative Tools */}
