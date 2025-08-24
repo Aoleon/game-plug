@@ -437,6 +437,18 @@ export default function GMRollWithEffects({
                     checked={selectedCharacters.includes(character.id)}
                     onCheckedChange={() => toggleCharacterSelection(character.id)}
                   />
+                  {/* Avatar */}
+                  {character.avatarUrl ? (
+                    <img 
+                      src={character.avatarUrl} 
+                      alt={`Portrait de ${character.name}`}
+                      className="w-8 h-8 rounded-full border border-aged-gold object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full border border-aged-gold bg-cosmic-void flex items-center justify-center">
+                      <User className="h-4 w-4 text-aged-gold" />
+                    </div>
+                  )}
                   <div className="flex-1 flex items-center justify-between">
                     <span className="text-sm font-medium">{character.name}</span>
                     <div className="flex gap-2">
