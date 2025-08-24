@@ -27,8 +27,8 @@ Vintage 1920s portrait photograph with dramatic noir lighting. ${occupation ? `D
       model: "dall-e-3",
       prompt: fullPrompt,
       n: 1,
-      size: "512x512", // Reduced size for faster generation
-      quality: "standard", // Standard quality for much faster generation (2-3x faster)
+      size: "1024x1024", // DALL-E 3 minimum supported size
+      quality: "standard", // Standard quality for faster generation
     });
 
     return { url: response.data?.[0]?.url || "" };
