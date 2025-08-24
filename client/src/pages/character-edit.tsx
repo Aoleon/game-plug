@@ -173,7 +173,7 @@ export default function CharacterEdit() {
         skillsLocked: false, // GM can unlock skills when editing
       };
 
-      await apiRequest(`/api/characters/${characterId}`, 'PATCH', updateData);
+      await apiRequest('PATCH', `/api/characters/${characterId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
@@ -182,7 +182,7 @@ export default function CharacterEdit() {
         title: "Personnage modifié",
         description: "Les modifications ont été sauvegardées avec succès.",
       });
-      setLocation(`/gm-dashboard/${sessionId}`);
+      setLocation(`/gm/${sessionId}`);
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -252,7 +252,7 @@ export default function CharacterEdit() {
       const description = avatarDescription || 
         `Portrait of ${form.getValues('name')}, ${form.getValues('age')} year old ${form.getValues('occupation')}, 1920s style`;
       
-      const response = await apiRequest('/api/generate-avatar', 'POST', {
+      const response = await apiRequest('POST', '/api/generate-avatar', {
         description,
         characterName: form.getValues('name'),
         occupation: form.getValues('occupation'),
