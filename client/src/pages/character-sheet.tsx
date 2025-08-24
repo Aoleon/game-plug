@@ -28,20 +28,8 @@ export default function CharacterSheet() {
   const { isAuthenticated, isLoading } = useAuth();
   const [rollHistory, setRollHistory] = useState<any[]>([]);
 
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Non autorisé",
-        description: "Vous êtes déconnecté. Connexion en cours...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+  // Players don't need to be authenticated to view their character sheet
+  // They just need to have joined a session
 
   const { data: character, isLoading: characterLoading, error } = useQuery<CharacterWithDetails>({
     queryKey: ["/api/characters", characterId],
@@ -55,7 +43,7 @@ export default function CharacterSheet() {
     enabled: !!character?.sessionId,
   });
 
-  if (characterLoading || isLoading) {
+  if (characterLoading) {
     return (
       <div className="min-h-screen bg-deep-black flex items-center justify-center">
         <div className="text-aged-gold text-xl font-cinzel">Chargement...</div>

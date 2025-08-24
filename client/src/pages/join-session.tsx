@@ -37,7 +37,13 @@ export default function JoinSession() {
     setIsLoading(true);
     try {
       // Verify session exists and is active
-      const session = await apiRequest("GET", `/api/sessions/join/${sessionCode.toUpperCase()}`);
+      const response = await fetch(`/api/sessions/join/${sessionCode.toUpperCase()}`);
+      
+      if (!response.ok) {
+        throw new Error("Session not found");
+      }
+      
+      const session = await response.json();
       
       if (session && session.id) {
         // Store session info in localStorage
