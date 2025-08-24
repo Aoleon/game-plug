@@ -448,30 +448,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Avatar generation for existing character
-  app.post('/api/characters/:id/generate-avatar', isAuthenticated, async (req, res) => {
-    try {
-      const { description, characterName, occupation, age } = req.body;
-      
-      if (!description || !characterName) {
-        return res.status(400).json({ message: "Description and character name are required" });
-      }
-
-      const { url } = await generateCharacterAvatar(description, characterName, occupation, age);
-      
-      // Update character with avatar URL
-      await storage.updateCharacter(req.params.id, {
-        avatarUrl: url,
-        avatarPrompt: description
-      });
-
-      res.json({ avatarUrl: url });
-    } catch (error) {
-      console.error("Error generating avatar:", error);
-      res.status(500).json({ message: "Failed to generate avatar" });
-    }
-  });
-
   // Generate avatar for a single character (Player or GM)
   app.post('/api/characters/:characterId/generate-avatar', async (req: any, res) => {
     try {
