@@ -121,6 +121,23 @@ export const activeEffects = pgTable("active_effects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Character inventory - items carried or equipped
+export const inventory = pgTable("inventory", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  characterId: varchar("character_id").notNull().references(() => characters.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(), // 'weapon', 'armor', 'tool', 'book', 'misc'
+  quantity: integer("quantity").default(1),
+  weight: integer("weight").default(1), // weight units
+  isEquipped: boolean("is_equipped").default(false),
+  damage: varchar("damage"), // dice formula for weapons (e.g., "1d6+2")
+  armor: integer("armor"), // armor value for armor items
+  properties: jsonb("properties").default('{}'), // Additional properties like range, ammo, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Chapters - subdivisions of game sessions
 export const chapters = pgTable("chapters", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -220,6 +237,7 @@ export const charactersRelations = relations(characters, ({ one, many }) => ({
   sanityConditions: many(sanityConditions),
   activeEffects: many(activeEffects),
   rollHistory: many(rollHistory),
+  inventory: many(inventory),
 }));
 
 export const sanityConditionsRelations = relations(sanityConditions, ({ one }) => ({
@@ -237,6 +255,13 @@ export const activeEffectsRelations = relations(activeEffects, ({ one }) => ({
   appliedBy: one(users, {
     fields: [activeEffects.appliedBy],
     references: [users.id],
+  }),
+}));
+
+export const inventoryRelations = relations(inventory, ({ one }) => ({
+  character: one(characters, {
+    fields: [inventory.characterId],
+    references: [characters.id],
   }),
 }));
 
@@ -300,6 +325,12 @@ export const insertChapterEventSchema = createInsertSchema(chapterEvents).omit({
   createdAt: true,
 });
 
+export const insertInventorySchema = createInsertSchema(inventory).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -317,3 +348,5 @@ export type Chapter = typeof chapters.$inferSelect;
 export type InsertChapter = z.infer<typeof insertChapterSchema>;
 export type ChapterEvent = typeof chapterEvents.$inferSelect;
 export type InsertChapterEvent = z.infer<typeof insertChapterEventSchema>;
+export type InventoryItem = typeof inventory.$inferSelect;
+export type InsertInventoryItem = z.infer<typeof insertInventorySchema>;

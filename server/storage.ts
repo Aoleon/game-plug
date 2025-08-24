@@ -7,6 +7,7 @@ import {
   sanityConditions,
   activeEffects,
   rollHistory,
+  inventory,
   type User,
   type UpsertUser,
   type GameSession,
@@ -23,6 +24,8 @@ import {
   type InsertActiveEffect,
   type RollHistory,
   type InsertRollHistory,
+  type InventoryItem,
+  type InsertInventoryItem,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -76,6 +79,13 @@ export interface IStorage {
   getImportantChapterEvents(sessionId: string): Promise<ChapterEvent[]>;
   updateChapterEvent(id: string, data: Partial<InsertChapterEvent>): Promise<ChapterEvent>;
   deleteChapterEvent(id: string): Promise<void>;
+  
+  // Inventory operations
+  addInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
+  getCharacterInventory(characterId: string): Promise<InventoryItem[]>;
+  updateInventoryItem(id: string, data: Partial<InsertInventoryItem>): Promise<InventoryItem>;
+  deleteInventoryItem(id: string): Promise<void>;
+  equipItem(id: string, isEquipped: boolean): Promise<InventoryItem>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -390,6 +400,44 @@ export class DatabaseStorage implements IStorage {
 
   async deleteChapterEvent(id: string): Promise<void> {
     await db.delete(chapterEvents).where(eq(chapterEvents.id, id));
+  }
+  
+  // Inventory operations
+  async addInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
+    const [inventoryItem] = await db
+      .insert(inventory)
+      .values(item)
+      .returning();
+    return inventoryItem;
+  }
+  
+  async getCharacterInventory(characterId: string): Promise<InventoryItem[]> {
+    return await db
+      .select()
+      .from(inventory)
+      .where(eq(inventory.characterId, characterId));
+  }
+  
+  async updateInventoryItem(id: string, data: Partial<InsertInventoryItem>): Promise<InventoryItem> {
+    const [item] = await db
+      .update(inventory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(inventory.id, id))
+      .returning();
+    return item;
+  }
+  
+  async deleteInventoryItem(id: string): Promise<void> {
+    await db.delete(inventory).where(eq(inventory.id, id));
+  }
+  
+  async equipItem(id: string, isEquipped: boolean): Promise<InventoryItem> {
+    const [item] = await db
+      .update(inventory)
+      .set({ isEquipped, updatedAt: new Date() })
+      .where(eq(inventory.id, id))
+      .returning();
+    return item;
   }
 }
 

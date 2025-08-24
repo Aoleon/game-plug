@@ -12,10 +12,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
+
+interface InventoryItem {
+  id: string;
+  characterId: string;
+  name: string;
+  description?: string | null;
+  category: string;
+  quantity: number;
+  weight: number;
+  isEquipped: boolean;
+  damage?: string | null;
+  armor?: number | null;
+  properties?: any;
+}
 
 interface CharacterWithDetails extends Character {
   sanityConditions: SanityCondition[];
@@ -33,6 +47,17 @@ export default function CharacterSheet() {
   const [notes, setNotes] = useState<string>("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [notesModified, setNotesModified] = useState(false);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItem, setNewItem] = useState({
+    name: '',
+    description: '',
+    category: 'misc',
+    quantity: 1,
+    weight: 1,
+    damage: '',
+    armor: 0
+  });
 
   // Players don't need to be authenticated to view their character sheet
   // They just need to have joined a session
@@ -51,6 +76,19 @@ export default function CharacterSheet() {
   
   // Filter rolls for this specific character
   const characterRolls = sessionRolls?.filter(roll => roll.characterId === characterId) || [];
+  
+  // Fetch inventory
+  const { data: inventoryData } = useQuery<InventoryItem[]>({
+    queryKey: ["/api/characters", characterId, "inventory"],
+    retry: false,
+    enabled: !!characterId,
+  });
+  
+  useEffect(() => {
+    if (inventoryData) {
+      setInventory(inventoryData);
+    }
+  }, [inventoryData]);
   
   // Initialize notes when character data is loaded
   useEffect(() => {
@@ -93,6 +131,88 @@ export default function CharacterSheet() {
     
     return () => clearTimeout(timer);
   }, [notes, notesModified]);
+  
+  // Calculate inventory slots based on character level/strength
+  const calculateMaxSlots = () => {
+    if (!character) return 10;
+    // Base slots + bonus from strength
+    const baseSlots = 10;
+    const strengthBonus = Math.floor((character.strength - 10) / 10);
+    return Math.max(5, baseSlots + strengthBonus);
+  };
+  
+  const totalWeight = inventory.reduce((sum, item) => sum + (item.weight * item.quantity), 0);
+  const maxSlots = calculateMaxSlots();
+  
+  // Add item to inventory
+  const handleAddItem = async () => {
+    if (!newItem.name) return;
+    
+    try {
+      const response = await apiRequest("POST", `/api/characters/${characterId}/inventory`, newItem);
+      setInventory([...inventory, response]);
+      setNewItem({
+        name: '',
+        description: '',
+        category: 'misc',
+        quantity: 1,
+        weight: 1,
+        damage: '',
+        armor: 0
+      });
+      setShowAddItem(false);
+      toast({
+        title: "Objet ajouté",
+        description: `${newItem.name} a été ajouté à votre inventaire.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId, "inventory"] });
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter l'objet.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Toggle equipped status
+  const handleToggleEquip = async (itemId: string, currentStatus: boolean) => {
+    try {
+      await apiRequest("PATCH", `/api/inventory/${itemId}/equip`, { isEquipped: !currentStatus });
+      setInventory(inventory.map(item => 
+        item.id === itemId ? { ...item, isEquipped: !currentStatus } : item
+      ));
+      queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId, "inventory"] });
+    } catch (error) {
+      console.error("Error toggling equip:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'équipement.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Delete item
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/inventory/${itemId}`, {});
+      setInventory(inventory.filter(item => item.id !== itemId));
+      toast({
+        title: "Objet supprimé",
+        description: "L'objet a été retiré de votre inventaire.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId, "inventory"] });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'objet.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);
@@ -698,6 +818,253 @@ export default function CharacterSheet() {
                   Sauvegarde automatique après 2 secondes d'inactivité.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Inventory Section */}
+        <div className="mt-8">
+          <Card className="bg-charcoal border-aged-gold parchment-bg">
+            <CardHeader>
+              <CardTitle className="font-cinzel text-aged-gold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Inventaire
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-source text-aged-parchment">
+                    Poids: {totalWeight}/{maxSlots} slots
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddItem(!showAddItem)}
+                    className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                    data-testid="button-add-item"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Add Item Form */}
+              {showAddItem && (
+                <div className="mb-6 p-4 bg-cosmic-void border border-aged-gold rounded-lg space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Nom de l'objet"
+                      value={newItem.name}
+                      onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                      className="bg-deep-black border-aged-gold text-bone-white"
+                      data-testid="input-item-name"
+                    />
+                    <select
+                      value={newItem.category}
+                      onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                      className="bg-deep-black border border-aged-gold text-bone-white rounded px-3 py-2"
+                      data-testid="select-item-category"
+                    >
+                      <option value="weapon">Arme</option>
+                      <option value="armor">Armure</option>
+                      <option value="tool">Outil</option>
+                      <option value="book">Livre</option>
+                      <option value="misc">Divers</option>
+                    </select>
+                  </div>
+                  <Input
+                    placeholder="Description (optionnel)"
+                    value={newItem.description}
+                    onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                    className="bg-deep-black border-aged-gold text-bone-white"
+                    data-testid="input-item-description"
+                  />
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs text-aged-parchment">Quantité</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={newItem.quantity}
+                        onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
+                        className="bg-deep-black border-aged-gold text-bone-white"
+                        data-testid="input-item-quantity"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-aged-parchment">Poids</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={newItem.weight}
+                        onChange={(e) => setNewItem({ ...newItem, weight: parseInt(e.target.value) || 0 })}
+                        className="bg-deep-black border-aged-gold text-bone-white"
+                        data-testid="input-item-weight"
+                      />
+                    </div>
+                    {newItem.category === 'weapon' && (
+                      <div>
+                        <label className="text-xs text-aged-parchment">Dégâts</label>
+                        <Input
+                          placeholder="1d6+2"
+                          value={newItem.damage}
+                          onChange={(e) => setNewItem({ ...newItem, damage: e.target.value })}
+                          className="bg-deep-black border-aged-gold text-bone-white"
+                          data-testid="input-item-damage"
+                        />
+                      </div>
+                    )}
+                    {newItem.category === 'armor' && (
+                      <div>
+                        <label className="text-xs text-aged-parchment">Armure</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={newItem.armor}
+                          onChange={(e) => setNewItem({ ...newItem, armor: parseInt(e.target.value) || 0 })}
+                          className="bg-deep-black border-aged-gold text-bone-white"
+                          data-testid="input-item-armor"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowAddItem(false)}
+                      className="border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleAddItem}
+                      className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                      data-testid="button-save-item"
+                    >
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Equipped Items */}
+              <div className="mb-6">
+                <h3 className="font-source text-bone-white font-semibold mb-3 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  Équipé
+                </h3>
+                <div className="space-y-2">
+                  {inventory.filter(item => item.isEquipped).map((item) => (
+                    <div key={item.id} className="bg-cosmic-void border border-aged-gold rounded p-3 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {item.category === 'weapon' && <Sword className="h-4 w-4 text-aged-gold" />}
+                          {item.category === 'armor' && <Shield className="h-4 w-4 text-aged-gold" />}
+                          <span className="text-bone-white font-semibold">{item.name}</span>
+                          {item.quantity > 1 && <Badge variant="outline" className="text-xs">x{item.quantity}</Badge>}
+                        </div>
+                        {item.description && (
+                          <p className="text-aged-parchment text-sm mt-1">{item.description}</p>
+                        )}
+                        <div className="flex gap-4 mt-1 text-xs text-aged-parchment">
+                          <span>Poids: {item.weight * item.quantity}</span>
+                          {item.damage && <span>Dégâts: {item.damage}</span>}
+                          {item.armor && <span>Armure: +{item.armor}</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleToggleEquip(item.id, item.isEquipped)}
+                          className="border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                          data-testid={`button-unequip-${item.id}`}
+                        >
+                          Déséquiper
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="text-red-500 hover:bg-red-500/20"
+                          data-testid={`button-delete-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {inventory.filter(item => item.isEquipped).length === 0 && (
+                    <p className="text-aged-parchment text-center">Aucun objet équipé</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Backpack Items */}
+              <div>
+                <h3 className="font-source text-bone-white font-semibold mb-3 flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Sac à dos
+                </h3>
+                <div className="space-y-2">
+                  {inventory.filter(item => !item.isEquipped).map((item) => (
+                    <div key={item.id} className="bg-cosmic-void/50 border border-aged-gold/50 rounded p-3 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {item.category === 'weapon' && <Sword className="h-4 w-4 text-aged-parchment" />}
+                          {item.category === 'armor' && <Shield className="h-4 w-4 text-aged-parchment" />}
+                          <span className="text-bone-white">{item.name}</span>
+                          {item.quantity > 1 && <Badge variant="outline" className="text-xs">x{item.quantity}</Badge>}
+                        </div>
+                        {item.description && (
+                          <p className="text-aged-parchment text-sm mt-1">{item.description}</p>
+                        )}
+                        <div className="flex gap-4 mt-1 text-xs text-aged-parchment">
+                          <span>Poids: {item.weight * item.quantity}</span>
+                          {item.damage && <span>Dégâts: {item.damage}</span>}
+                          {item.armor && <span>Armure: +{item.armor}</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {(item.category === 'weapon' || item.category === 'armor') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleEquip(item.id, item.isEquipped)}
+                            className="border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                            data-testid={`button-equip-${item.id}`}
+                          >
+                            Équiper
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="text-red-500 hover:bg-red-500/20"
+                          data-testid={`button-delete-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {inventory.filter(item => !item.isEquipped).length === 0 && (
+                    <p className="text-aged-parchment text-center">Votre sac est vide</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Weight Warning */}
+              {totalWeight > maxSlots && (
+                <div className="mt-4 p-3 bg-blood-burgundy/20 border border-blood-burgundy rounded">
+                  <p className="text-bone-white text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Vous êtes surchargé ! Votre capacité de mouvement est réduite.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

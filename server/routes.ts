@@ -462,6 +462,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get character inventory
+  app.get('/api/characters/:id/inventory', async (req, res) => {
+    try {
+      const items = await storage.getCharacterInventory(req.params.id);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      res.status(500).json({ message: "Failed to fetch inventory" });
+    }
+  });
+  
+  // Add item to inventory
+  app.post('/api/characters/:id/inventory', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const characterId = req.params.id;
+      
+      // Check if user is GM or owns the character
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      const session = await storage.getGameSession(character.sessionId);
+      const isGM = session && session.gmId === userId;
+      const isOwner = character.userId === userId;
+      
+      if (!isOwner && !isGM) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      const item = await storage.addInventoryItem({
+        ...req.body,
+        characterId
+      });
+      
+      res.json(item);
+    } catch (error) {
+      console.error("Error adding inventory item:", error);
+      res.status(500).json({ message: "Failed to add item" });
+    }
+  });
+  
+  // Update inventory item
+  app.patch('/api/inventory/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const itemId = req.params.id;
+      
+      // Get item to check ownership
+      const [item] = await storage.getCharacterInventory(itemId);
+      if (item) {
+        const character = await storage.getCharacter(item.characterId);
+        if (character) {
+          const session = await storage.getGameSession(character.sessionId);
+          const isGM = session && session.gmId === userId;
+          const isOwner = character.userId === userId;
+          
+          if (!isOwner && !isGM) {
+            return res.status(403).json({ message: "Permission denied" });
+          }
+        }
+      }
+      
+      const updatedItem = await storage.updateInventoryItem(itemId, req.body);
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating inventory item:", error);
+      res.status(500).json({ message: "Failed to update item" });
+    }
+  });
+  
+  // Toggle item equipped status
+  app.patch('/api/inventory/:id/equip', isAuthenticated, async (req: any, res) => {
+    try {
+      const { isEquipped } = req.body;
+      const item = await storage.equipItem(req.params.id, isEquipped);
+      res.json(item);
+    } catch (error) {
+      console.error("Error toggling item equipped status:", error);
+      res.status(500).json({ message: "Failed to toggle equipped status" });
+    }
+  });
+  
+  // Delete inventory item
+  app.delete('/api/inventory/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteInventoryItem(req.params.id);
+      res.json({ message: "Item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting inventory item:", error);
+      res.status(500).json({ message: "Failed to delete item" });
+    }
+  });
+
   // Simple avatar generation without character ID requirement
   app.post('/api/generate-avatar', isAuthenticated, async (req, res) => {
     try {
