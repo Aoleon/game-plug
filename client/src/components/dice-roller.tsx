@@ -42,6 +42,9 @@ export default function DiceRoller({ character }: DiceRollerProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showDice, setShowDice] = useState(false);
   const [animatingDice, setAnimatingDice] = useState<number[]>([]);
+  const [rollMode, setRollMode] = useState<'auto' | 'manual'>('auto');
+  const [manualResult, setManualResult] = useState<number>(50);
+  const [pendingRoll, setPendingRoll] = useState<{ skillName: string, skillValue: number } | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
 
   const skills = character.skills as Record<string, number> || {};
@@ -159,6 +162,11 @@ export default function DiceRoller({ character }: DiceRollerProps) {
   });
 
   const performSkillRoll = async (skillName: string, skillValue: number) => {
+    if (rollMode === 'manual') {
+      setPendingRoll({ skillName, skillValue });
+      return;
+    }
+
     setIsRolling(true);
     setShowDice(true);
     playSound('roll');
@@ -179,6 +187,10 @@ export default function DiceRoller({ character }: DiceRollerProps) {
     const result = roll.total;
     setAnimatingDice([result]);
     
+    await processRollResult(skillName, skillValue, result);
+  };
+
+  const processRollResult = async (skillName: string, skillValue: number, result: number) => {
     let outcome: RollResult['outcome'] = 'failure';
     if (result === 1) {
       outcome = 'extreme_success';
@@ -241,6 +253,26 @@ export default function DiceRoller({ character }: DiceRollerProps) {
       description: `Résultat: ${result} (cible: ${skillValue})`,
       variant: outcome === 'failure' ? 'destructive' : 'default',
     });
+  };
+
+  const submitManualRoll = async () => {
+    if (!pendingRoll || manualResult < 1 || manualResult > 100) {
+      toast({
+        title: "Résultat invalide",
+        description: "Le résultat doit être entre 1 et 100.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await processRollResult(pendingRoll.skillName, pendingRoll.skillValue, manualResult);
+    setPendingRoll(null);
+    setManualResult(50);
+  };
+
+  const cancelManualRoll = () => {
+    setPendingRoll(null);
+    setManualResult(50);
   };
 
   const performSanityCheck = () => {
@@ -310,14 +342,26 @@ export default function DiceRoller({ character }: DiceRollerProps) {
             <Dice6 className="inline mr-2 h-5 w-5" />
             Lancers de Dés
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="text-aged-gold hover:text-bone-white"
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRollMode(rollMode === 'auto' ? 'manual' : 'auto')}
+              className="text-aged-gold hover:text-bone-white text-xs"
+              data-testid="button-toggle-roll-mode"
+            >
+              {rollMode === 'auto' ? <Dices className="h-4 w-4 mr-1" /> : <Target className="h-4 w-4 mr-1" />}
+              {rollMode === 'auto' ? 'Auto' : 'Manuel'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="text-aged-gold hover:text-bone-white"
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -418,6 +462,53 @@ export default function DiceRoller({ character }: DiceRollerProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Manual Roll Interface */}
+        {pendingRoll && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-blood-burgundy border border-aged-gold rounded-lg p-4"
+          >
+            <div className="text-center mb-3">
+              <h3 className="font-cinzel text-lg text-bone-white mb-1">
+                Lancer Manuel: {pendingRoll.skillName}
+              </h3>
+              <p className="text-aged-parchment text-sm">
+                Cible: {pendingRoll.skillValue}% - Entrez le résultat de votre dé physique
+              </p>
+            </div>
+            
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                value={manualResult}
+                onChange={(e) => setManualResult(parseInt(e.target.value) || 1)}
+                placeholder="Résultat (1-100)"
+                min={1}
+                max={100}
+                className="flex-1 bg-deep-black border-aged-gold text-bone-white text-center text-lg"
+                data-testid="input-manual-result"
+                autoFocus
+              />
+              <Button
+                onClick={submitManualRoll}
+                className="bg-eldritch-green hover:bg-green-700 text-bone-white px-4"
+                data-testid="button-submit-manual-roll"
+              >
+                ✓
+              </Button>
+              <Button
+                onClick={cancelManualRoll}
+                variant="outline"
+                className="border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black px-4"
+                data-testid="button-cancel-manual-roll"
+              >
+                ✗
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Roll Result Display */}
         {lastRoll && !isRolling && (

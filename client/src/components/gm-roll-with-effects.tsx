@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   EyeOff, Dice6, Brain, Heart, Shield, 
-  Zap, Users, User, AlertTriangle 
+  Zap, Users, User, AlertTriangle, Target, Dices 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { rollDice } from "@/lib/dice";
@@ -135,6 +135,18 @@ export default function GMRollWithEffects({
   const [lastResults, setLastResults] = useState<Map<string, number>>(new Map());
   const [isRolling, setIsRolling] = useState(false);
   const [rollMode, setRollMode] = useState<'individual' | 'group'>('individual');
+  const [diceMode, setDiceMode] = useState<'auto' | 'manual'>('auto');
+  const [pendingRoll, setPendingRoll] = useState<{ 
+    formula: string; 
+    selectedCharacters: string[]; 
+    rollMode: string; 
+    isSecret: boolean; 
+    applyEffect: boolean; 
+    effectType: string; 
+    description: string; 
+    selectedPreset: any; 
+  } | null>(null);
+  const [manualResults, setManualResults] = useState<{ [charId: string]: number }>({});
 
   const handlePresetChange = (presetValue: string) => {
     const preset = ROLL_PRESETS.find(p => p.value === presetValue);
@@ -287,9 +299,20 @@ export default function GMRollWithEffects({
   return (
     <Card className="bg-gray-900/50 border-aged-gold/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-cinzel text-aged-gold">
-          <Dice6 className="h-5 w-5" />
-          Jets de Dés avec Effets
+        <CardTitle className="flex justify-between items-center font-cinzel text-aged-gold">
+          <span className="flex items-center gap-2">
+            <Dice6 className="h-5 w-5" />
+            Jets de Dés avec Effets
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDiceMode(diceMode === 'auto' ? 'manual' : 'auto')}
+            className="text-aged-gold hover:text-bone-white text-xs"
+            data-testid="button-toggle-dice-mode"
+          >
+            {diceMode === 'auto' ? 'Auto' : 'Manuel'}
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
