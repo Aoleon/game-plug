@@ -116,11 +116,22 @@ export default function CharacterCreation() {
   });
 
   const generateAvatarMutation = useMutation({
-    mutationFn: async ({ characterId, description, name }: { characterId: string, description: string, name: string }) => {
+    mutationFn: async ({ characterId, description, name, occupation, age }: { 
+      characterId: string, 
+      description: string, 
+      name: string,
+      occupation?: string,
+      age?: number 
+    }) => {
       const response = await fetch(`/api/characters/${characterId}/generate-avatar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, characterName: name })
+        body: JSON.stringify({ 
+          description, 
+          characterName: name,
+          occupation,
+          age
+        })
       });
       if (!response.ok) throw new Error("Failed to generate avatar");
       return response.json();
@@ -152,25 +163,46 @@ export default function CharacterCreation() {
   const buildDescription = () => {
     const parts = [];
     
-    if (physicalTraits.height) parts.push(`Taille: ${physicalTraits.height}`);
-    if (physicalTraits.weight) parts.push(`Poids: ${physicalTraits.weight}`);
-    if (physicalTraits.build) parts.push(`Corpulence: ${physicalTraits.build}`);
-    if (physicalTraits.hairColor) parts.push(`Cheveux ${physicalTraits.hairColor}`);
-    if (physicalTraits.eyeColor) parts.push(`Yeux ${physicalTraits.eyeColor}`);
-    if (physicalTraits.style) parts.push(`Style: ${physicalTraits.style}`);
-    if (physicalTraits.distinctiveFeatures.length > 0) {
-      parts.push(`Signes distinctifs: ${physicalTraits.distinctiveFeatures.join(", ")}`);
+    // Physical characteristics with proper formatting
+    if (physicalTraits.height) {
+      parts.push(`${physicalTraits.height}`);
+    }
+    if (physicalTraits.build) {
+      parts.push(`${physicalTraits.build}`);
+    }
+    if (physicalTraits.hairColor) {
+      parts.push(`avec des cheveux ${physicalTraits.hairColor}`);
+    }
+    if (physicalTraits.eyeColor) {
+      parts.push(`et des yeux ${physicalTraits.eyeColor}`);
     }
     
-    const customDescription = form.getValues("avatarDescription");
-    if (customDescription) parts.push(customDescription);
+    // Clothing style - important for 1920s atmosphere
+    if (physicalTraits.style) {
+      parts.push(`Habillé(e) en ${physicalTraits.style}`);
+    }
     
-    return parts.join(". ");
+    // Distinctive features that create character depth
+    if (physicalTraits.distinctiveFeatures.length > 0) {
+      const features = physicalTraits.distinctiveFeatures.join(", ").toLowerCase();
+      parts.push(`Traits distinctifs: ${features}`);
+    }
+    
+    // Add custom description if provided
+    const customDescription = form.getValues("avatarDescription");
+    if (customDescription) {
+      parts.push(customDescription);
+    }
+    
+    // Create a more natural description
+    return parts.length > 0 ? parts.join(", ") + "." : "";
   };
 
-  const handleGenerateAvatar = () => {
+  const handleGenerateAvatar = async () => {
     const description = buildDescription();
     const name = form.getValues("name");
+    const occupation = form.getValues("occupation");
+    const age = form.getValues("age");
     
     if (!description || !name) {
       toast({
@@ -181,16 +213,41 @@ export default function CharacterCreation() {
       return;
     }
 
-    setIsGeneratingAvatar(true);
-    // For now we'll simulate the generation since we need a character ID
-    setTimeout(() => {
-      setAvatarUrl("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300");
-      setIsGeneratingAvatar(false);
+    try {
+      setIsGeneratingAvatar(true);
+      
+      // Generate avatar directly without needing a character ID
+      const response = await fetch("/api/generate-avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          description, 
+          characterName: name,
+          occupation,
+          age
+        })
+      });
+      
+      if (!response.ok) throw new Error("Failed to generate avatar");
+      const result = await response.json();
+      
+      setAvatarUrl(result.avatarUrl);
+      
       toast({
         title: "Portrait généré",
-        description: "Le portrait de votre personnage a été créé.",
+        description: "Le portrait de votre personnage a été créé avec succès.",
       });
-    }, 3000);
+      
+    } catch (error) {
+      console.error("Avatar generation error:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le portrait. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAvatar(false);
+    }
   };
 
   const onSubmit = (data: CharacterCreationForm) => {

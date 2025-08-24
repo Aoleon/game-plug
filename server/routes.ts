@@ -349,16 +349,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Avatar generation
-  app.post('/api/characters/:id/generate-avatar', isAuthenticated, async (req, res) => {
+  // Simple avatar generation without character ID requirement
+  app.post('/api/generate-avatar', isAuthenticated, async (req, res) => {
     try {
-      const { description, characterName } = req.body;
+      const { description, characterName, occupation, age } = req.body;
       
       if (!description || !characterName) {
         return res.status(400).json({ message: "Description and character name are required" });
       }
 
-      const { url } = await generateCharacterAvatar(description, characterName);
+      const { url } = await generateCharacterAvatar(description, characterName, occupation, age);
+
+      res.json({ avatarUrl: url });
+    } catch (error) {
+      console.error("Error generating avatar:", error);
+      res.status(500).json({ message: "Failed to generate avatar" });
+    }
+  });
+
+  // Avatar generation for existing character
+  app.post('/api/characters/:id/generate-avatar', isAuthenticated, async (req, res) => {
+    try {
+      const { description, characterName, occupation, age } = req.body;
+      
+      if (!description || !characterName) {
+        return res.status(400).json({ message: "Description and character name are required" });
+      }
+
+      const { url } = await generateCharacterAvatar(description, characterName, occupation, age);
       
       // Update character with avatar URL
       await storage.updateCharacter(req.params.id, {
@@ -481,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!sessionConnections.has(sessionId)) {
             sessionConnections.set(sessionId, new Set());
           }
-          sessionConnections.get(sessionId)?.add(ws);
+          sessionConnections.get(sessionId!)?.add(ws);
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -490,9 +508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', () => {
       if (sessionId && sessionConnections.has(sessionId)) {
-        sessionConnections.get(sessionId)?.delete(ws);
-        if (sessionConnections.get(sessionId)?.size === 0) {
-          sessionConnections.delete(sessionId);
+        sessionConnections.get(sessionId!)?.delete(ws);
+        if (sessionConnections.get(sessionId!)?.size === 0) {
+          sessionConnections.delete(sessionId!);
         }
       }
     });
