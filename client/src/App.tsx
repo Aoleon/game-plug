@@ -25,6 +25,7 @@ function Router() {
       <Route path="/session/:sessionId/select-character" component={SelectCharacter} />
       <Route path="/character/:id" component={CharacterSheet} />
       <Route path="/create-character" component={CharacterCreation} />
+      <Route path="/character-creation" component={CharacterCreation} />
       
       {/* GM routes - require authentication */}
       {isLoading || !isAuthenticated ? (
