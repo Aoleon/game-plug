@@ -15,15 +15,27 @@ export default function Landing() {
             Plongez dans l'univers cosmique de H.P. Lovecraft. Créez vos investigateurs, 
             affrontez l'indicible et succombez lentement à la folie.
           </p>
-          <Button 
-            size="lg"
-            className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white px-8 py-4 text-lg font-source"
-            onClick={() => window.location.href = '/api/login'}
-            data-testid="button-login"
-          >
-            <Eye className="mr-2 h-5 w-5" />
-            Entrer dans les Ténèbres
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg"
+              className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white px-8 py-4 text-lg font-source"
+              onClick={() => window.location.href = '/api/login'}
+              data-testid="button-login"
+            >
+              <Eye className="mr-2 h-5 w-5" />
+              Devenir Maître de Jeu
+            </Button>
+            <Button 
+              size="lg"
+              variant="outline"
+              className="border-aged-gold text-aged-gold hover:bg-aged-gold/10 px-8 py-4 text-lg font-source"
+              onClick={() => window.location.href = '/join'}
+              data-testid="button-join-session"
+            >
+              <Users className="mr-2 h-5 w-5" />
+              Rejoindre une Session
+            </Button>
+          </div>
         </div>
       </div>
 

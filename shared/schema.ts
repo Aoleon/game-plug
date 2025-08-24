@@ -40,7 +40,9 @@ export const users = pgTable("users", {
 export const gameSessions = pgTable("game_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
+  code: varchar("code", { length: 6 }).unique(),
   gmId: varchar("gm_id").notNull().references(() => users.id),
+  status: varchar("status").default('preparation'), // 'preparation', 'active', 'ended'
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -49,7 +51,7 @@ export const gameSessions = pgTable("game_sessions", {
 // Characters
 export const characters = pgTable("characters", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").references(() => users.id), // Can be null for player characters without accounts
   sessionId: varchar("session_id").notNull().references(() => gameSessions.id),
   name: varchar("name").notNull(),
   occupation: varchar("occupation").notNull(),

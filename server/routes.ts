@@ -13,6 +13,16 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// Generate a unique session code
+function generateSessionCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -29,12 +39,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public route to join a session with code
+  app.get('/api/sessions/join/:code', async (req, res) => {
+    try {
+      const code = req.params.code.toUpperCase();
+      const session = await storage.getGameSessionByCode(code);
+      
+      if (!session || session.status !== 'active') {
+        return res.status(404).json({ message: "Session not found or inactive" });
+      }
+      
+      res.json(session);
+    } catch (error) {
+      console.error("Error joining session:", error);
+      res.status(500).json({ message: "Failed to join session" });
+    }
+  });
+
   // Game session routes
   app.post('/api/sessions', isAuthenticated, async (req: any, res) => {
     try {
       const sessionData = insertGameSessionSchema.parse({
         ...req.body,
-        gmId: req.user.claims.sub
+        gmId: req.user.claims.sub,
+        code: generateSessionCode(),
+        status: 'active'
       });
       const session = await storage.createGameSession(sessionData);
       res.json(session);
@@ -54,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/sessions/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/sessions/:id', async (req, res) => {
     try {
       const session = await storage.getGameSession(req.params.id);
       if (!session) {
@@ -101,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/sessions/:id/characters', isAuthenticated, async (req, res) => {
+  app.get('/api/sessions/:id/characters', async (req, res) => {
     try {
       const characters = await storage.getCharactersBySession(req.params.id);
       
@@ -124,11 +153,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Character routes
-  app.post('/api/characters', isAuthenticated, async (req: any, res) => {
+  app.post('/api/characters', async (req: any, res) => {
     try {
+      // For players without auth, userId can be null
+      const userId = req.user?.claims?.sub || null;
       const characterData = insertCharacterSchema.parse({
         ...req.body,
-        userId: req.user.claims.sub
+        userId
       });
       const character = await storage.createCharacter(characterData);
       res.json(character);
@@ -138,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/characters', isAuthenticated, async (req: any, res) => {
+  app.get('/api/characters', async (req: any, res) => {
     try {
       const characters = await storage.getCharactersByUser(req.user.claims.sub);
       res.json(characters);
@@ -148,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/characters/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/characters/:id', async (req, res) => {
     try {
       const character = await storage.getCharacter(req.params.id);
       if (!character) {

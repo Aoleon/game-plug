@@ -43,10 +43,15 @@ export default function CharacterCreation() {
   const [selectedOccupation, setSelectedOccupation] = useState<string>("");
   const [skillPoints, setSkillPoints] = useState<Record<string, number>>({});
 
-  // Fetch available sessions
+  // Check if coming from a session join flow
+  const sessionFromStorage = localStorage.getItem('createCharacterForSession');
+  const sessionIdFromStorage = localStorage.getItem('currentSessionId');
+  
+  // Fetch available sessions only if authenticated
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<GameSession[]>({
     queryKey: ["/api/sessions"],
     retry: false,
+    enabled: !sessionFromStorage && !sessionIdFromStorage, // Only fetch if not coming from join flow
   });
 
   const form = useForm<CharacterCreationForm>({
@@ -58,7 +63,7 @@ export default function CharacterCreation() {
       birthplace: "",
       residence: "",
       gender: "",
-      sessionId: "", // Will be selected by user
+      sessionId: sessionFromStorage || sessionIdFromStorage || "", // Pre-fill if coming from join flow
       avatarDescription: "",
     },
   });
@@ -79,9 +84,18 @@ export default function CharacterCreation() {
         description: `${character.name} a été créé avec succès.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/characters"] });
+      
+      // Clear session creation flag if it was set
+      if (sessionFromStorage) {
+        localStorage.removeItem('createCharacterForSession');
+        localStorage.setItem('currentCharacterId', character.id);
+        localStorage.setItem('currentCharacterName', character.name);
+      }
+      
       setLocation(`/character/${character.id}`);
     },
     onError: (error) => {
+      console.error("Character creation error:", error);
       toast({
         title: "Erreur",
         description: "Impossible de créer le personnage.",

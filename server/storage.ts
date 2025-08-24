@@ -29,6 +29,7 @@ export interface IStorage {
   // Game session operations
   createGameSession(session: InsertGameSession): Promise<GameSession>;
   getGameSession(id: string): Promise<GameSession | undefined>;
+  getGameSessionByCode(code: string): Promise<GameSession | undefined>;
   getGameSessionsByGM(gmId: string): Promise<GameSession[]>;
   updateGameSession(id: string, data: Partial<InsertGameSession>): Promise<GameSession>;
   deleteGameSession(id: string): Promise<void>;
@@ -95,6 +96,14 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
+  async getGameSessionByCode(code: string): Promise<GameSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(gameSessions)
+      .where(eq(gameSessions.code, code));
+    return session;
+  }
+
   async getGameSessionsByGM(gmId: string): Promise<GameSession[]> {
     return await db
       .select()
@@ -114,8 +123,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGameSession(id: string): Promise<void> {
     // Delete all related data first
-    const characters = await this.getCharactersBySession(id);
-    for (const character of characters) {
+    const sessionCharacters = await this.getCharactersBySession(id);
+    for (const character of sessionCharacters) {
       await db.delete(sanityConditions).where(eq(sanityConditions.characterId, character.id));
       await db.delete(activeEffects).where(eq(activeEffects.characterId, character.id));
       await db.delete(rollHistory).where(eq(rollHistory.characterId, character.id));

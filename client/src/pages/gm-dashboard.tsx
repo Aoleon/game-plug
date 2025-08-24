@@ -298,6 +298,17 @@ export default function GMDashboard() {
                     {session.name}
                   </span>
                 </p>
+                {session.code && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm text-aged-parchment">Code de session :</span>
+                    <code className="bg-cosmic-void px-3 py-1 rounded text-aged-gold font-mono text-lg font-bold">
+                      {session.code}
+                    </code>
+                    <span className="text-xs text-aged-parchment/60 ml-2">
+                      (Partagez ce code avec vos joueurs)
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-4">
                 <ConnectionIndicator isConnected={isConnected} />
