@@ -226,6 +226,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chapter Events Routes
+  app.post('/api/chapter-events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eventData = {
+        ...req.body,
+        userId,
+      };
+      const event = await storage.createChapterEvent(eventData);
+      
+      // Broadcast event to WebSocket clients
+      if (eventData.sessionId) {
+        broadcastToSession(eventData.sessionId, {
+          type: 'chapter_event',
+          data: event
+        });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error creating chapter event:", error);
+      res.status(500).json({ message: "Failed to create chapter event" });
+    }
+  });
+
+  app.get('/api/chapters/:chapterId/events', async (req: any, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+      const events = await storage.getChapterEvents(req.params.chapterId, limit);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching chapter events:", error);
+      res.status(500).json({ message: "Failed to fetch chapter events" });
+    }
+  });
+
+  app.get('/api/sessions/:sessionId/important-events', async (req: any, res) => {
+    try {
+      const events = await storage.getImportantChapterEvents(req.params.sessionId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching important events:", error);
+      res.status(500).json({ message: "Failed to fetch important events" });
+    }
+  });
+
+  app.patch('/api/chapter-events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const event = await storage.updateChapterEvent(req.params.id, req.body);
+      res.json(event);
+    } catch (error) {
+      console.error("Error updating chapter event:", error);
+      res.status(500).json({ message: "Failed to update chapter event" });
+    }
+  });
+
+  app.delete('/api/chapter-events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteChapterEvent(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting chapter event:", error);
+      res.status(500).json({ message: "Failed to delete chapter event" });
+    }
+  });
+
   // Character routes
   app.post('/api/characters', async (req: any, res) => {
     try {

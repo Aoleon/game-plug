@@ -11,7 +11,7 @@ import RollHistoryVisual from "@/components/roll-history-visual";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
-import ChapterManager from "@/components/chapter-manager";
+import { ChapterManagerWithHistory } from "@/components/chapter-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,7 +219,7 @@ export default function GMDashboard() {
     }
   };
 
-  const handleRollWithEffects = (result: any) => {
+  const handleRollWithEffects = async (result: any) => {
     // Handle the roll results
     const rollEntries = Array.from(result.results.entries());
     
@@ -235,6 +235,38 @@ export default function GMDashboard() {
           timestamp: new Date()
         };
         setRollResults(prev => [newRoll, ...prev.slice(0, 9)]);
+        
+        // Record roll in chapter event history
+        try {
+          const chapters = await queryClient.fetchQuery({
+            queryKey: ["/api/sessions", sessionId, "chapters"],
+          }) as any[];
+          
+          const activeChapter = chapters?.find((c: any) => c.status === 'active');
+          if (activeChapter) {
+            await fetch('/api/chapter-events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chapterId: activeChapter.id,
+                sessionId,
+                eventType: 'roll',
+                title: `${character.name} - Jet de ${result.formula}`,
+                description: `Résultat: ${value}${value === 1 ? ' (Réussite critique!)' : value >= 96 ? ' (Échec critique!)' : ''}${result.description ? ` - ${result.description}` : ''}`,
+                characterId: charId,
+                metadata: {
+                  formula: result.formula,
+                  result: value,
+                  characterName: character.name,
+                  isSecret: result.isSecret || false
+                },
+                isImportant: value === 1 || value >= 96, // Critical success or fumble
+              }),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to record roll event:', error);
+        }
       }
     }
     
@@ -450,9 +482,13 @@ export default function GMDashboard() {
           <UnifiedAmbientController />
         </div>
 
-        {/* Chapter Manager */}
+        {/* Chapter Manager with History */}
         <div className="mb-6">
-          <ChapterManager sessionId={sessionId || ''} isGM={true} />
+          <ChapterManagerWithHistory 
+            sessionId={sessionId || ''} 
+            isGM={true} 
+            characters={characters}
+          />
         </div>
 
         {/* Advanced GM Tools */}
@@ -466,19 +502,73 @@ export default function GMDashboard() {
           
           {/* Narrative Tools */}
           <NarrativeTools 
-            onAmbiance={(text) => {
+            onAmbiance={async (text) => {
               if (isConnected) {
                 sendMessage('ambiance', { text, timestamp: new Date() });
               }
+              
+              // Record ambiance in chapter event history
+              try {
+                const chapters = await queryClient.fetchQuery({
+                  queryKey: ["/api/sessions", sessionId, "chapters"],
+                }) as any[];
+                
+                const activeChapter = chapters?.find((c: any) => c.status === 'active');
+                if (activeChapter) {
+                  await fetch('/api/chapter-events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chapterId: activeChapter.id,
+                      sessionId,
+                      eventType: 'narration',
+                      title: "Ambiance",
+                      description: text,
+                      metadata: { type: 'ambiance' },
+                      isImportant: false,
+                    }),
+                  });
+                }
+              } catch (error) {
+                console.error('Failed to record ambiance event:', error);
+              }
+              
               toast({
                 title: "Ambiance envoyée",
                 description: text.substring(0, 50) + '...',
               });
             }}
-            onNarration={(text) => {
+            onNarration={async (text) => {
               if (isConnected) {
                 sendMessage('narration', { text, timestamp: new Date() });
               }
+              
+              // Record narration in chapter event history
+              try {
+                const chapters = await queryClient.fetchQuery({
+                  queryKey: ["/api/sessions", sessionId, "chapters"],
+                }) as any[];
+                
+                const activeChapter = chapters?.find((c: any) => c.status === 'active');
+                if (activeChapter) {
+                  await fetch('/api/chapter-events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chapterId: activeChapter.id,
+                      sessionId,
+                      eventType: 'narration',
+                      title: "Narration",
+                      description: text,
+                      metadata: { type: 'narration' },
+                      isImportant: true, // Narrations are usually important story elements
+                    }),
+                  });
+                }
+              } catch (error) {
+                console.error('Failed to record narration event:', error);
+              }
+              
               toast({
                 title: "Narration envoyée",
                 description: text.substring(0, 50) + '...',

@@ -17,9 +17,10 @@ import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, Plus, Edit, Trash2, ChevronUp, ChevronDown, 
-  CheckCircle, Clock, PlayCircle, Archive
+  CheckCircle, Clock, PlayCircle, Archive, History
 } from "lucide-react";
-import type { Chapter } from "@shared/schema";
+import ChapterEventHistory from "./chapter-event-history";
+import type { Chapter, Character } from "@shared/schema";
 
 const chapterFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -33,12 +34,15 @@ type ChapterFormData = z.infer<typeof chapterFormSchema>;
 interface ChapterManagerProps {
   sessionId: string;
   isGM: boolean;
+  characters?: Character[];
 }
 
-export default function ChapterManager({ sessionId, isGM }: ChapterManagerProps) {
+export default function ChapterManager({ sessionId, isGM, characters = [] }: ChapterManagerProps) {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"chapters" | "history">("chapters");
 
   const { data: chapters = [], isLoading } = useQuery<Chapter[]>({
     queryKey: ["/api/sessions", sessionId, "chapters"],
@@ -363,8 +367,8 @@ export default function ChapterManager({ sessionId, isGM }: ChapterManagerProps)
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge className={`${getStatusColor(chapter.status)} text-white`}>
-                              {getStatusIcon(chapter.status)}
+                            <Badge className={`${getStatusColor(chapter.status || 'planned')} text-white`}>
+                              {getStatusIcon(chapter.status || 'planned')}
                               <span className="ml-1">
                                 {chapter.status === 'planned' && 'Planifié'}
                                 {chapter.status === 'active' && 'En cours'}
@@ -454,5 +458,74 @@ export default function ChapterManager({ sessionId, isGM }: ChapterManagerProps)
         )}
       </CardContent>
     </Card>
+  );
+}
+
+export function ChapterManagerWithHistory({ sessionId, isGM, characters = [] }: ChapterManagerProps) {
+  const [activeTab, setActiveTab] = useState<"chapters" | "history">("chapters");
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  
+  // Get chapters to determine active chapter
+  const { data: chapters = [] } = useQuery<Chapter[]>({
+    queryKey: ["/api/sessions", sessionId, "chapters"],
+    retry: false,
+  });
+  
+  const activeChapter = chapters.find(c => c.status === 'active') || chapters[0];
+  
+  return (
+    <div className="space-y-4">
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant={activeTab === "chapters" ? "default" : "outline"}
+          onClick={() => setActiveTab("chapters")}
+          className={activeTab === "chapters" 
+            ? "bg-aged-gold text-deep-black hover:bg-gold-700" 
+            : "border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+          }
+          data-testid="button-tab-chapters"
+        >
+          <BookOpen className="h-4 w-4 mr-2" />
+          Chapitres
+        </Button>
+        <Button
+          variant={activeTab === "history" ? "default" : "outline"}
+          onClick={() => setActiveTab("history")}
+          className={activeTab === "history" 
+            ? "bg-aged-gold text-deep-black hover:bg-gold-700" 
+            : "border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+          }
+          disabled={!activeChapter}
+          data-testid="button-tab-history"
+        >
+          <History className="h-4 w-4 mr-2" />
+          Historique
+        </Button>
+        {activeTab === "history" && activeChapter && (
+          <span className="text-sm text-aged-parchment ml-2">
+            Chapitre actif: {activeChapter.name}
+          </span>
+        )}
+      </div>
+      
+      {/* Tab Content */}
+      {activeTab === "chapters" ? (
+        <ChapterManager sessionId={sessionId} isGM={isGM} characters={characters} />
+      ) : activeChapter ? (
+        <ChapterEventHistory 
+          chapterId={activeChapter.id} 
+          sessionId={sessionId} 
+          isGM={isGM}
+          characters={characters}
+        />
+      ) : (
+        <Card className="bg-charcoal border-aged-gold parchment-bg">
+          <CardContent className="py-8 text-center text-aged-parchment">
+            Créez un chapitre pour commencer à enregistrer l'historique
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

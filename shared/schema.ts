@@ -130,6 +130,21 @@ export const chapters = pgTable("chapters", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Chapter events - complete history of what happens in a chapter
+export const chapterEvents = pgTable("chapter_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
+  sessionId: varchar("session_id").notNull().references(() => gameSessions.id),
+  eventType: varchar("event_type").notNull(), // 'roll', 'narration', 'decision', 'sanity', 'combat', 'discovery', 'milestone'
+  title: varchar("title").notNull(),
+  description: text("description"),
+  metadata: jsonb("metadata").default('{}'), // Store additional data like roll results, character involved, etc.
+  characterId: varchar("character_id").references(() => characters.id),
+  userId: varchar("user_id").references(() => users.id),
+  isImportant: boolean("is_important").default(false), // Mark key events
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Dice roll history
 export const rollHistory = pgTable("roll_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -162,10 +177,30 @@ export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => 
   chapters: many(chapters),
 }));
 
-export const chaptersRelations = relations(chapters, ({ one }) => ({
+export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   session: one(gameSessions, {
     fields: [chapters.sessionId],
     references: [gameSessions.id],
+  }),
+  events: many(chapterEvents),
+}));
+
+export const chapterEventsRelations = relations(chapterEvents, ({ one }) => ({
+  chapter: one(chapters, {
+    fields: [chapterEvents.chapterId],
+    references: [chapters.id],
+  }),
+  session: one(gameSessions, {
+    fields: [chapterEvents.sessionId],
+    references: [gameSessions.id],
+  }),
+  character: one(characters, {
+    fields: [chapterEvents.characterId],
+    references: [characters.id],
+  }),
+  user: one(users, {
+    fields: [chapterEvents.userId],
+    references: [users.id],
   }),
 }));
 
@@ -256,6 +291,11 @@ export const insertChapterSchema = createInsertSchema(chapters).omit({
   updatedAt: true,
 });
 
+export const insertChapterEventSchema = createInsertSchema(chapterEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -271,3 +311,5 @@ export type RollHistory = typeof rollHistory.$inferSelect;
 export type InsertRollHistory = z.infer<typeof insertRollHistorySchema>;
 export type Chapter = typeof chapters.$inferSelect;
 export type InsertChapter = z.infer<typeof insertChapterSchema>;
+export type ChapterEvent = typeof chapterEvents.$inferSelect;
+export type InsertChapterEvent = z.infer<typeof insertChapterEventSchema>;

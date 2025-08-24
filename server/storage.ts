@@ -3,6 +3,7 @@ import {
   gameSessions,
   characters,
   chapters,
+  chapterEvents,
   sanityConditions,
   activeEffects,
   rollHistory,
@@ -14,6 +15,8 @@ import {
   type InsertCharacter,
   type Chapter,
   type InsertChapter,
+  type ChapterEvent,
+  type InsertChapterEvent,
   type SanityCondition,
   type InsertSanityCondition,
   type ActiveEffect,
@@ -65,6 +68,13 @@ export interface IStorage {
   getChapter(id: string): Promise<Chapter | undefined>;
   updateChapter(id: string, data: Partial<InsertChapter>): Promise<Chapter>;
   deleteChapter(id: string): Promise<void>;
+  
+  // Chapter event operations
+  createChapterEvent(event: InsertChapterEvent): Promise<ChapterEvent>;
+  getChapterEvents(chapterId: string, limit?: number): Promise<ChapterEvent[]>;
+  getImportantChapterEvents(sessionId: string): Promise<ChapterEvent[]>;
+  updateChapterEvent(id: string, data: Partial<InsertChapterEvent>): Promise<ChapterEvent>;
+  deleteChapterEvent(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -300,7 +310,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteChapter(id: string): Promise<void> {
+    // Delete all chapter events first
+    await db.delete(chapterEvents).where(eq(chapterEvents.chapterId, id));
     await db.delete(chapters).where(eq(chapters.id, id));
+  }
+
+  // Chapter event operations
+  async createChapterEvent(event: InsertChapterEvent): Promise<ChapterEvent> {
+    const [newEvent] = await db
+      .insert(chapterEvents)
+      .values(event)
+      .returning();
+    return newEvent;
+  }
+
+  async getChapterEvents(chapterId: string, limit: number = 100): Promise<ChapterEvent[]> {
+    return await db
+      .select()
+      .from(chapterEvents)
+      .where(eq(chapterEvents.chapterId, chapterId))
+      .orderBy(desc(chapterEvents.createdAt))
+      .limit(limit);
+  }
+
+  async getImportantChapterEvents(sessionId: string): Promise<ChapterEvent[]> {
+    return await db
+      .select()
+      .from(chapterEvents)
+      .where(and(
+        eq(chapterEvents.sessionId, sessionId),
+        eq(chapterEvents.isImportant, true)
+      ))
+      .orderBy(desc(chapterEvents.createdAt));
+  }
+
+  async updateChapterEvent(id: string, data: Partial<InsertChapterEvent>): Promise<ChapterEvent> {
+    const [event] = await db
+      .update(chapterEvents)
+      .set(data)
+      .where(eq(chapterEvents.id, id))
+      .returning();
+    return event;
+  }
+
+  async deleteChapterEvent(id: string): Promise<void> {
+    await db.delete(chapterEvents).where(eq(chapterEvents.id, id));
   }
 }
 
