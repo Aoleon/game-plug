@@ -48,22 +48,32 @@ export default function CharacterSheet() {
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);
     try {
+      console.log("Starting avatar generation for character:", characterId);
       const response = await apiRequest("POST", `/api/characters/${characterId}/generate-avatar`);
+      console.log("Response received:", response);
+      
       const data = await response.json();
+      console.log("Avatar generation response:", data);
       
-      toast({
-        title: "Portrait généré",
-        description: "Votre nouveau portrait a été créé avec succès.",
-      });
+      if (data.avatarUrl) {
+        toast({
+          title: "Portrait généré",
+          description: "Votre nouveau portrait a été créé avec succès.",
+        });
+        
+        // Force refresh character data to show new avatar
+        await queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
+        await queryClient.refetchQueries({ queryKey: ["/api/characters", characterId] });
+      } else {
+        throw new Error("No avatar URL received");
+      }
       
-      // Refresh character data to show new avatar
-      queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating avatar:", error);
+      const errorMessage = error.message || "Impossible de générer le portrait.";
       toast({
         title: "Erreur",
-        description: "Impossible de générer le portrait.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
