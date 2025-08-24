@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,15 @@ export default function JoinSession() {
   const { toast } = useToast();
   const [sessionCode, setSessionCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check for code in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get('code');
+    if (codeFromUrl) {
+      setSessionCode(codeFromUrl.toUpperCase().slice(0, 6));
+    }
+  }, []);
 
   const handleJoinSession = async () => {
     if (sessionCode.length !== 6) {

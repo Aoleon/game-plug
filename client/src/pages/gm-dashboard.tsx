@@ -24,8 +24,9 @@ import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle, BookOpen 
+  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle 
 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -45,6 +46,8 @@ export default function GMDashboard() {
   const [customDice, setCustomDice] = useState("");
   const [rollResults, setRollResults] = useState<Array<{ result: number; dice: string; timestamp: Date; character?: string }>>([]);
   const [isSecretRoll, setIsSecretRoll] = useState(false);
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [copyStatus, setCopyStatus] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -330,14 +333,50 @@ export default function GMDashboard() {
                   </span>
                 </p>
                 {session.code && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm text-aged-parchment">Code de session :</span>
-                    <code className="bg-cosmic-void px-3 py-1 rounded text-aged-gold font-mono text-lg font-bold">
-                      {session.code}
-                    </code>
-                    <span className="text-xs text-aged-parchment/60 ml-2">
-                      (Partagez ce code avec vos joueurs)
-                    </span>
+                  <div className="space-y-3 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-aged-parchment">Code de session :</span>
+                      <code className="bg-cosmic-void px-3 py-1 rounded text-aged-gold font-mono text-lg font-bold">
+                        {session.code}
+                      </code>
+                      <span className="text-xs text-aged-parchment/60 ml-2">
+                        (Partagez ce code avec vos joueurs)
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowQRDialog(true)}
+                        className="bg-cosmic-void border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                        data-testid="button-show-qr"
+                      >
+                        <QrCode className="mr-2 h-4 w-4" />
+                        Afficher QR Code
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const joinUrl = `${window.location.origin}/join?code=${session.code}`;
+                          navigator.clipboard.writeText(joinUrl);
+                          setCopyStatus(true);
+                          setTimeout(() => setCopyStatus(false), 2000);
+                          toast({
+                            title: "Lien copié",
+                            description: "Le lien de connexion a été copié dans le presse-papier",
+                          });
+                        }}
+                        className="bg-cosmic-void border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                        data-testid="button-copy-link"
+                      >
+                        {copyStatus ? (
+                          <><CheckCircle className="mr-2 h-4 w-4" /> Copié!</>
+                        ) : (
+                          <><Copy className="mr-2 h-4 w-4" /> Copier le lien</>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -778,6 +817,86 @@ export default function GMDashboard() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* QR Code Dialog */}
+        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+          <DialogContent className="bg-charcoal border-aged-gold max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold text-xl">
+                Code QR pour rejoindre la session
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 p-4">
+              <div className="bg-white p-4 rounded-lg">
+                <QRCodeCanvas
+                  value={`${window.location.origin}/join?code=${session?.code || ''}`}
+                  size={256}
+                  level="H"
+                  includeMargin={false}
+                  imageSettings={{
+                    src: "",
+                    x: undefined,
+                    y: undefined,
+                    height: 0,
+                    width: 0,
+                    excavate: false,
+                  }}
+                />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-aged-parchment">
+                  Code de session :
+                </p>
+                <code className="bg-cosmic-void px-4 py-2 rounded text-aged-gold font-mono text-2xl font-bold block">
+                  {session?.code}
+                </code>
+                <p className="text-xs text-aged-parchment/60">
+                  Les joueurs peuvent scanner ce code pour rejoindre directement
+                </p>
+              </div>
+              <div className="flex gap-2 w-full">
+                <Button
+                  className="flex-1 bg-cosmic-void border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                  variant="outline"
+                  onClick={() => {
+                    const joinUrl = `${window.location.origin}/join?code=${session?.code || ''}`;
+                    navigator.clipboard.writeText(joinUrl);
+                    toast({
+                      title: "Lien copié",
+                      description: "Le lien avec le code a été copié",
+                    });
+                  }}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copier le lien
+                </Button>
+                <Button
+                  className="flex-1 bg-cosmic-void border-aged-gold text-aged-gold hover:bg-aged-gold hover:text-deep-black"
+                  variant="outline"
+                  onClick={() => {
+                    const joinUrl = `${window.location.origin}/join?code=${session?.code || ''}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Rejoindre la session',
+                        text: `Rejoignez la session ${session?.name} avec le code ${session?.code}`,
+                        url: joinUrl,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(joinUrl);
+                      toast({
+                        title: "Lien copié",
+                        description: "Le partage n'est pas disponible, le lien a été copié",
+                      });
+                    }
+                  }}
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Partager
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
