@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle, BookOpen, Target } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DEFAULT_SKILLS, calculateOccupationPoints, type Occupation } from "@/lib/cthulhu-data";
+import { DEFAULT_SKILLS, SKILL_TRANSLATIONS, calculateOccupationPoints, type Occupation } from "@/lib/cthulhu-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SkillSelectorProps {
@@ -214,7 +214,13 @@ export default function SkillSelector({ occupation, characteristics, onSkillsCha
             <TabsContent value="occupation" className="mt-4">
               {occupation ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {occupation.occupationSkills.map(skillName => (
+                  {occupation.occupationSkills
+                    .sort((a, b) => {
+                      const nameA = SKILL_TRANSLATIONS[a] || formatSkillName(a);
+                      const nameB = SKILL_TRANSLATIONS[b] || formatSkillName(b);
+                      return nameA.localeCompare(nameB, 'fr');
+                    })
+                    .map(skillName => (
                     <div key={skillName} className="space-y-1">
                       <Label className="text-sm text-bone-white flex items-center justify-between">
                         <span>{formatSkillName(skillName)}</span>
@@ -252,7 +258,13 @@ export default function SkillSelector({ occupation, characteristics, onSkillsCha
                 <div key={category}>
                   <h4 className="font-cinzel text-aged-gold mb-3">{category}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {categorySkills.map(skillName => {
+                    {categorySkills
+                      .sort((a, b) => {
+                        const nameA = SKILL_TRANSLATIONS[a] || formatSkillName(a);
+                        const nameB = SKILL_TRANSLATIONS[b] || formatSkillName(b);
+                        return nameA.localeCompare(nameB, 'fr');
+                      })
+                      .map(skillName => {
                       const isOccupationSkill = occupation?.occupationSkills.includes(skillName);
                       return (
                         <div key={skillName} className="space-y-1">

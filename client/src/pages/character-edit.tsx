@@ -670,7 +670,13 @@ export default function CharacterEdit() {
                 </Alert>
                 
                 <div className="grid md:grid-cols-3 gap-3">
-                  {Object.entries(DEFAULT_SKILLS).map(([skillKey, baseValue]) => {
+                  {Object.entries(DEFAULT_SKILLS)
+                    .sort(([keyA], [keyB]) => {
+                      const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      return nameA.localeCompare(nameB, 'fr');
+                    })
+                    .map(([skillKey, baseValue]) => {
                     const currentValue = skillPoints[skillKey] || baseValue;
                     const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     

@@ -897,7 +897,13 @@ export default function CharacterCreation() {
                         </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
-                        {Object.entries(DEFAULT_SKILLS).map(([skillKey, baseValue]) => {
+                        {Object.entries(DEFAULT_SKILLS)
+                          .sort(([keyA], [keyB]) => {
+                            const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return nameA.localeCompare(nameB, 'fr');
+                          })
+                          .map(([skillKey, baseValue]) => {
                           const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
                           const isOccupationSkill = occupation?.occupationSkills.includes(skillKey);
                           const allocated = allocatedPoints[skillKey] || 0;
@@ -957,7 +963,11 @@ export default function CharacterCreation() {
                       <div className="grid md:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2">
                         {Object.entries(skillPoints)
                           .filter(([_, value]) => value > DEFAULT_SKILLS[_] || allocatedPoints[_])
-                          .sort(([, a], [, b]) => b - a)
+                          .sort(([keyA], [keyB]) => {
+                            const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return nameA.localeCompare(nameB, 'fr');
+                          })
                           .map(([skillKey, value]) => {
                             const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             const baseValue = DEFAULT_SKILLS[skillKey] || 0;

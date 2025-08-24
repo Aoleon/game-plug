@@ -724,7 +724,13 @@ export default function CharacterSheet() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {Object.entries(skills).map(([skillName, skillValue]) => (
+                  {Object.entries(skills)
+                    .sort(([keyA], [keyB]) => {
+                      const nameA = SKILL_TRANSLATIONS[keyA] || keyA.charAt(0).toUpperCase() + keyA.slice(1).replace(/_/g, ' ');
+                      const nameB = SKILL_TRANSLATIONS[keyB] || keyB.charAt(0).toUpperCase() + keyB.slice(1).replace(/_/g, ' ');
+                      return nameA.localeCompare(nameB, 'fr');
+                    })
+                    .map(([skillName, skillValue]) => (
                     <div key={skillName} className="flex justify-between items-center">
                       <span className="font-source text-aged-parchment">
                         {SKILL_TRANSLATIONS[skillName] || skillName.charAt(0).toUpperCase() + skillName.slice(1).replace(/_/g, ' ')}
