@@ -26,7 +26,7 @@ export default function GMSecretRoll({ onRoll, players = [] }: GMSecretRollProps
   const { playRoll, playCritical, playFumble } = useDiceSound();
   const [formula, setFormula] = useState("1d100");
   const [isSecret, setIsSecret] = useState(true);
-  const [targetPlayer, setTargetPlayer] = useState<string>("");
+  const [targetPlayer, setTargetPlayer] = useState<string>("all");
   const [description, setDescription] = useState("");
   const [lastResult, setLastResult] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -167,7 +167,7 @@ export default function GMSecretRoll({ onRoll, players = [] }: GMSecretRollProps
                 <SelectValue placeholder="Tous les joueurs" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les joueurs</SelectItem>
+                <SelectItem value="all">Tous les joueurs</SelectItem>
                 {players.map(player => (
                   <SelectItem key={player.id} value={player.id}>
                     {player.name}

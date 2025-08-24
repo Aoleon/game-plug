@@ -254,8 +254,11 @@ export default function CharacterCreation() {
     const derivedStats = calculateDerivedStats(characteristics);
     const occupation = OCCUPATIONS.find(occ => occ.name === data.occupation);
     
-    // If no sessionId provided, create a default one or get from available sessions
+    // If no sessionId provided or "none" selected, create a default one or get from available sessions
     let finalSessionId = data.sessionId;
+    if (finalSessionId === "none") {
+      finalSessionId = undefined;
+    }
     if (!finalSessionId && sessions && sessions.length > 0) {
       finalSessionId = sessions[0].id; // Use first available session
     }
@@ -528,7 +531,7 @@ export default function CharacterCreation() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-cosmic-void border-aged-gold">
-                            <SelectItem value="">Aucune session</SelectItem>
+                            <SelectItem value="none">Aucune session</SelectItem>
                             {sessions?.map((session) => (
                               <SelectItem key={session.id} value={session.id}>
                                 {session.name}
