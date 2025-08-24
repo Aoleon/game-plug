@@ -17,14 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollDice, parseDiceFormula } from "@/lib/dice";
 import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle 
+  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2 
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -48,6 +49,8 @@ export default function GMDashboard() {
   const [isSecretRoll, setIsSecretRoll] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [copyStatus, setCopyStatus] = useState(false);
+  const [deleteCharacterId, setDeleteCharacterId] = useState<string | null>(null);
+  const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -90,6 +93,40 @@ export default function GMDashboard() {
     queryKey: ["/api/sessions", sessionId, "characters"],
     retry: false,
     enabled: !!sessionId,
+  });
+
+  // Delete character mutation
+  const deleteCharacterMutation = useMutation({
+    mutationFn: async (characterId: string) => {
+      await apiRequest("DELETE", `/api/sessions/${sessionId}/characters/${characterId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+      toast({
+        title: "Personnage supprimé",
+        description: "Le personnage a été retiré de la session.",
+      });
+      setDeleteCharacterId(null);
+      setDeleteCharacterName("");
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Non autorisé",
+          description: "Vous êtes déconnecté. Connexion en cours...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le personnage.",
+        variant: "destructive",
+      });
+    },
   });
 
   const applyEffectToCharacters = async (effect: any) => {
@@ -398,8 +435,22 @@ export default function GMDashboard() {
         {/* Players Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {characters.map((character) => (
-            <Card key={character.id} className="bg-charcoal border-aged-gold parchment-bg">
+            <Card key={character.id} className="bg-charcoal border-aged-gold parchment-bg relative">
               <CardContent className="p-4">
+                {/* Delete button */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setDeleteCharacterId(character.id);
+                    setDeleteCharacterName(character.name);
+                  }}
+                  className="absolute top-2 right-2 text-blood-burgundy hover:text-dark-crimson hover:bg-blood-burgundy/10 p-1"
+                  data-testid={`button-delete-character-${character.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                
                 <div className="flex items-center space-x-3 mb-4">
                   {character.avatarUrl ? (
                     <img 
@@ -899,6 +950,42 @@ export default function GMDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+        
+        {/* Delete Character Confirmation Dialog */}
+        <AlertDialog open={!!deleteCharacterId} onOpenChange={(open) => {
+          if (!open) {
+            setDeleteCharacterId(null);
+            setDeleteCharacterName("");
+          }
+        }}>
+          <AlertDialogContent className="bg-charcoal border-aged-gold">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-cinzel text-aged-gold">
+                Supprimer le personnage ?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-aged-parchment">
+                Êtes-vous sûr de vouloir retirer <span className="text-bone-white font-bold">{deleteCharacterName}</span> de la session ?
+                Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-cosmic-void border-aged-gold text-aged-gold hover:bg-aged-gold/10">
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deleteCharacterId) {
+                    deleteCharacterMutation.mutate(deleteCharacterId);
+                  }
+                }}
+                disabled={deleteCharacterMutation.isPending}
+                className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white"
+              >
+                {deleteCharacterMutation.isPending ? "Suppression..." : "Supprimer"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

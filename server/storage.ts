@@ -46,6 +46,7 @@ export interface IStorage {
   getCharactersBySession(sessionId: string): Promise<Character[]>;
   getCharactersByUser(userId: string): Promise<Character[]>;
   updateCharacter(id: string, data: Partial<InsertCharacter>): Promise<Character>;
+  deleteCharacter(id: string): Promise<void>;
   
   // Sanity condition operations
   addSanityCondition(condition: InsertSanityCondition): Promise<SanityCondition>;
@@ -209,6 +210,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(characters.id, id))
       .returning();
     return character;
+  }
+  
+  async deleteCharacter(id: string): Promise<void> {
+    // First delete related records
+    await db.delete(sanityConditions).where(eq(sanityConditions.characterId, id));
+    await db.delete(activeEffects).where(eq(activeEffects.characterId, id));
+    await db.delete(rollHistory).where(eq(rollHistory.characterId, id));
+    
+    // Then delete the character
+    await db.delete(characters).where(eq(characters.id, id));
   }
 
   // Sanity condition operations

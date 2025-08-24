@@ -474,6 +474,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete character from session (GM only)
+  app.delete('/api/sessions/:sessionId/characters/:characterId', isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if GM owns this session
+      const session = await storage.getGameSession(req.params.sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Only the GM can remove players from the session" });
+      }
+      
+      // Check if character exists and belongs to this session
+      const character = await storage.getCharacter(req.params.characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      if (character.sessionId !== req.params.sessionId) {
+        return res.status(400).json({ message: "Character does not belong to this session" });
+      }
+      
+      // Delete the character
+      await storage.deleteCharacter(req.params.characterId);
+      
+      res.json({ message: "Character removed from session successfully" });
+    } catch (error) {
+      console.error("Error removing character from session:", error);
+      res.status(500).json({ message: "Failed to remove character from session" });
+    }
+  });
+
   // Active effect routes
   app.post('/api/characters/:id/effects', isAuthenticated, async (req: any, res) => {
     try {
