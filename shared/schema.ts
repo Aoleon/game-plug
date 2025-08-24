@@ -85,6 +85,7 @@ export const characters = pgTable("characters", {
   
   // Skills (stored as JSON for flexibility)
   skills: jsonb("skills").notNull().default('{}'),
+  skillsLocked: boolean("skills_locked").default(false), // Lock skills after initial creation
   
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),

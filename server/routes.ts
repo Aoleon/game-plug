@@ -335,7 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const characterData = insertCharacterSchema.parse({
         ...req.body,
         sessionId,
-        userId
+        userId,
+        skillsLocked: true // Lock skills immediately after creation
       });
       const character = await storage.createCharacter(characterData);
       res.json(character);
@@ -374,9 +375,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/characters/:id', isAuthenticated, async (req, res) => {
+  app.patch('/api/characters/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.claims?.sub;
       const updateData = req.body;
+      
+      // Get the character to check if skills are locked
+      const existingCharacter = await storage.getCharacter(req.params.id);
+      if (!existingCharacter) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if the user is the GM of the session
+      const session = await storage.getGameSession(existingCharacter.sessionId);
+      const isGM = session && session.gmId === userId;
+      
+      // If skills are locked and user is not GM, prevent skill modification
+      if (existingCharacter.skillsLocked && !isGM && updateData.skills !== undefined) {
+        delete updateData.skills; // Remove skills from update data
+        // You could also return an error here instead:
+        // return res.status(403).json({ message: "Skills are locked and cannot be modified" });
+      }
       const character = await storage.updateCharacter(req.params.id, updateData);
       
       // Apply automatic status effects if HP or Sanity changed

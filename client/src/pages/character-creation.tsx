@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
 import { OCCUPATIONS, DEFAULT_SKILLS, calculateOccupationPoints, SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
-import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar, ToggleLeft, ToggleRight, Info } from "lucide-react";
+import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar, ToggleLeft, ToggleRight, Info, Lock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -849,6 +849,17 @@ export default function CharacterCreation() {
                     </div>
                   </div>
 
+                  {/* Skills Lock Warning */}
+                  {manualSkillMode && (
+                    <Alert className="bg-cosmic-void border-blood-burgundy">
+                      <AlertCircle className="h-4 w-4 text-blood-burgundy" />
+                      <AlertDescription className="text-aged-parchment">
+                        <strong className="text-bone-white">Important:</strong> Une fois votre personnage créé, la répartition des points de compétences sera <strong>définitivement verrouillée</strong>. 
+                        Assurez-vous de bien répartir vos points avant de sauvegarder.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   {/* Occupation Skills Info */}
                   <Alert className="bg-cosmic-void border-aged-gold">
                     <Info className="h-4 w-4 text-aged-gold" />
@@ -1256,6 +1267,14 @@ export default function CharacterCreation() {
                 </Tabs>
               </CardContent>
             </Card>
+
+            {/* Final Warning before saving */}
+            <Alert className="bg-cosmic-void border-aged-gold">
+              <Info className="h-4 w-4 text-aged-gold" />
+              <AlertDescription className="text-aged-parchment">
+                <strong className="text-bone-white">Rappel:</strong> Les compétences seront verrouillées après la création du personnage et ne pourront plus être modifiées.
+              </AlertDescription>
+            </Alert>
 
             {/* Action Buttons */}
             <div className="flex gap-4 justify-end">

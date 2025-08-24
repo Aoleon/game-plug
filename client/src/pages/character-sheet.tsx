@@ -11,6 +11,7 @@ import SanityTracker from "@/components/sanity-tracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -362,8 +363,14 @@ export default function CharacterSheet() {
             {/* Skills */}
             <Card className="bg-charcoal border-aged-gold parchment-bg">
               <CardHeader>
-                <CardTitle className="font-cinzel text-aged-gold">
-                  Compétences
+                <CardTitle className="font-cinzel text-aged-gold flex justify-between items-center">
+                  <span>Compétences</span>
+                  {character.skillsLocked && (
+                    <Badge variant="outline" className="border-aged-gold text-aged-gold">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Verrouillées
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
