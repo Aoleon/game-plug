@@ -11,7 +11,7 @@ import SanityTracker from "@/components/sanity-tracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 
@@ -89,6 +89,90 @@ export default function CharacterSheet() {
   ];
 
   const skills = character.skills as Record<string, number> || {};
+  
+  // Calculate conditional statuses based on HP and Sanity
+  const calculateConditionalStatuses = () => {
+    const statuses = [];
+    const hpPercentage = character.hitPoints / character.maxHitPoints;
+    const sanityPercentage = character.sanity / character.maxSanity;
+    
+    // HP-based statuses
+    if (character.hitPoints <= 0) {
+      statuses.push({
+        name: "Mort",
+        description: "Le personnage est décédé",
+        severity: "critical",
+        icon: Skull,
+        color: "text-black"
+      });
+    } else if (character.hitPoints <= 2) {
+      statuses.push({
+        name: "Mourant",
+        description: "Inconscient et en train de mourir - Soins urgents requis!",
+        severity: "critical",
+        icon: Activity,
+        color: "text-red-600"
+      });
+    } else if (hpPercentage < 0.5) {
+      statuses.push({
+        name: "Blessure Grave",
+        description: "Malus de -20% à tous les jets de compétence",
+        severity: "severe",
+        icon: AlertTriangle,
+        color: "text-orange-500"
+      });
+    } else if (hpPercentage < 0.75) {
+      statuses.push({
+        name: "Blessure Légère",
+        description: "Malus de -10% à tous les jets de compétence",
+        severity: "moderate",
+        icon: AlertCircle,
+        color: "text-yellow-500"
+      });
+    }
+    
+    // Sanity-based statuses
+    if (character.sanity <= 0) {
+      statuses.push({
+        name: "Folie Permanente",
+        description: "L'esprit est définitivement brisé",
+        severity: "critical",
+        icon: Brain,
+        color: "text-purple-900"
+      });
+    } else if (sanityPercentage < 0.2) {
+      statuses.push({
+        name: "Folie Majeure",
+        description: "État mental extrêmement fragile - Malus de -30% aux jets sociaux",
+        severity: "severe",
+        icon: Brain,
+        color: "text-purple-600"
+      });
+    } else if (sanityPercentage < 0.5) {
+      statuses.push({
+        name: "Instabilité Mentale",
+        description: "Nervosité et paranoïa - Malus de -15% aux jets de Psychologie et Persuasion",
+        severity: "moderate",
+        icon: Brain,
+        color: "text-purple-400"
+      });
+    }
+    
+    // Combined status
+    if (hpPercentage < 0.3 && sanityPercentage < 0.3) {
+      statuses.push({
+        name: "État Critique",
+        description: "Corps et esprit au bord de l'effondrement - Malus de -40% à tous les jets",
+        severity: "critical",
+        icon: Skull,
+        color: "text-red-900"
+      });
+    }
+    
+    return statuses;
+  };
+  
+  const conditionalStatuses = calculateConditionalStatuses();
 
   return (
     <div className="min-h-screen bg-deep-black text-bone-white">
@@ -174,13 +258,23 @@ export default function CharacterSheet() {
 
                 {/* Vital Stats */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center bg-cosmic-void rounded-lg p-3">
+                  <div className={`text-center bg-cosmic-void rounded-lg p-3 border-2 ${
+                    character.hitPoints <= 2 ? 'border-red-600 animate-pulse' : 
+                    character.hitPoints / character.maxHitPoints < 0.5 ? 'border-orange-500' :
+                    character.hitPoints / character.maxHitPoints < 0.75 ? 'border-yellow-500' :
+                    'border-transparent'
+                  }`}>
                     <div className="text-lg font-bold text-bone-white" data-testid="text-hit-points">
                       {character.hitPoints}/{character.maxHitPoints}
                     </div>
                     <div className="text-xs text-aged-parchment">Points de Vie</div>
                   </div>
-                  <div className="text-center bg-cosmic-void rounded-lg p-3">
+                  <div className={`text-center bg-cosmic-void rounded-lg p-3 border-2 ${
+                    character.sanity <= 0 ? 'border-purple-900 animate-pulse' :
+                    character.sanity / character.maxSanity < 0.2 ? 'border-purple-600' :
+                    character.sanity / character.maxSanity < 0.5 ? 'border-purple-400' :
+                    'border-transparent'
+                  }`}>
                     <div className="text-lg font-bold text-bone-white" data-testid="text-sanity-points">
                       {character.sanity}/{character.maxSanity}
                     </div>
@@ -193,6 +287,36 @@ export default function CharacterSheet() {
                     <div className="text-xs text-aged-parchment">Points de Magie</div>
                   </div>
                 </div>
+                
+                {/* Conditional Status Indicators */}
+                {conditionalStatuses.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <div className="text-sm font-cinzel text-aged-gold mb-2">État Actuel</div>
+                    {conditionalStatuses.map((status, index) => {
+                      const Icon = status.icon;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`flex items-start gap-2 p-2 rounded bg-deep-black border ${
+                            status.severity === 'critical' ? 'border-red-600' :
+                            status.severity === 'severe' ? 'border-orange-500' :
+                            'border-yellow-500'
+                          }`}
+                        >
+                          <Icon className={`h-5 w-5 mt-0.5 ${status.color}`} />
+                          <div className="flex-1">
+                            <div className={`font-source font-semibold ${status.color}`}>
+                              {status.name}
+                            </div>
+                            <div className="text-xs text-aged-parchment mt-1">
+                              {status.description}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
