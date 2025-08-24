@@ -12,6 +12,7 @@ import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { ChapterManagerWithHistory } from "@/components/chapter-manager";
+import CharacterInventoryDisplay from "@/components/character-inventory-display";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +26,11 @@ import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit, Image 
+  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit, Image,
+  Package, Search, Filter, ShoppingBag, X
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
+import { PREDEFINED_ITEMS, filterItems, getUniqueTags, type PredefinedItem } from "@/lib/predefined-items";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -54,6 +57,13 @@ export default function GMDashboard() {
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
   const [forceRegenerateAvatars, setForceRegenerateAvatars] = useState(false);
+  
+  // Inventory management states
+  const [inventoryModalOpen, setInventoryModalOpen] = useState(false);
+  const [selectedCharacterForInventory, setSelectedCharacterForInventory] = useState<string | null>(null);
+  const [inventorySearch, setInventorySearch] = useState("");
+  const [inventoryCategory, setInventoryCategory] = useState<string>("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -612,7 +622,7 @@ export default function GMDashboard() {
           {characters.map((character) => (
             <Card key={character.id} className="bg-charcoal border-aged-gold parchment-bg relative">
               <CardContent className="p-4">
-                {/* Edit and Delete buttons */}
+                {/* Edit, Inventory and Delete buttons */}
                 <div className="absolute top-2 right-2 flex gap-1">
                   <Button
                     size="sm"
@@ -623,6 +633,19 @@ export default function GMDashboard() {
                     title="Éditer le personnage"
                   >
                     <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedCharacterForInventory(character.id);
+                      setInventoryModalOpen(true);
+                    }}
+                    className="text-eldritch-green hover:text-bone-white hover:bg-eldritch-green/10 p-1"
+                    data-testid={`button-manage-inventory-${character.id}`}
+                    title="Gérer l'inventaire"
+                  >
+                    <Package className="h-4 w-4" />
                   </Button>
                   <Button
                     size="sm"
@@ -1142,6 +1165,178 @@ export default function GMDashboard() {
                   <Share2 className="mr-2 h-4 w-4" />
                   Partager
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Inventory Management Modal */}
+        <Dialog open={inventoryModalOpen} onOpenChange={setInventoryModalOpen}>
+          <DialogContent className="bg-charcoal border-aged-gold max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Gestion de l'inventaire - {characters.find(c => c.id === selectedCharacterForInventory)?.name}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {/* Filters */}
+              <div className="sticky top-0 bg-charcoal p-4 border-b border-aged-gold/30 space-y-3">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-aged-parchment" />
+                    <Input
+                      placeholder="Rechercher un objet..."
+                      value={inventorySearch}
+                      onChange={(e) => setInventorySearch(e.target.value)}
+                      className="pl-10 bg-cosmic-void border-aged-gold text-bone-white"
+                      data-testid="input-inventory-search"
+                    />
+                  </div>
+                  <Select value={inventoryCategory} onValueChange={setInventoryCategory}>
+                    <SelectTrigger className="w-40 bg-cosmic-void border-aged-gold text-bone-white">
+                      <SelectValue placeholder="Catégorie" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-charcoal border-aged-gold">
+                      <SelectItem value="all">Toutes</SelectItem>
+                      <SelectItem value="weapon">Armes</SelectItem>
+                      <SelectItem value="armor">Armures</SelectItem>
+                      <SelectItem value="tool">Outils</SelectItem>
+                      <SelectItem value="book">Livres</SelectItem>
+                      <SelectItem value="misc">Divers</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1">
+                  {getUniqueTags().slice(0, 10).map(tag => (
+                    <Button
+                      key={tag}
+                      size="sm"
+                      variant={selectedTags.includes(tag) ? "default" : "outline"}
+                      onClick={() => {
+                        if (selectedTags.includes(tag)) {
+                          setSelectedTags(selectedTags.filter(t => t !== tag));
+                        } else {
+                          setSelectedTags([...selectedTags, tag]);
+                        }
+                      }}
+                      className={selectedTags.includes(tag) 
+                        ? "bg-aged-gold text-deep-black text-xs"
+                        : "border-aged-gold text-aged-gold hover:bg-aged-gold/10 text-xs"
+                      }
+                      data-testid={`button-tag-${tag}`}
+                    >
+                      {tag}
+                    </Button>
+                  ))}
+                  {selectedTags.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedTags([])}
+                      className="text-blood-burgundy hover:bg-blood-burgundy/10 text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Effacer
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Current Inventory */}
+              <div className="px-4">
+                <h3 className="font-source text-bone-white font-semibold mb-2 flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  Inventaire actuel
+                </h3>
+                <CharacterInventoryDisplay 
+                  characterId={selectedCharacterForInventory}
+                  onRemoveItem={async (itemId) => {
+                    try {
+                      await apiRequest("DELETE", `/api/inventory/${itemId}`, {});
+                      queryClient.invalidateQueries({ queryKey: ["/api/characters", selectedCharacterForInventory, "inventory"] });
+                      toast({
+                        title: "Objet retiré",
+                        description: "L'objet a été retiré de l'inventaire.",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Erreur",
+                        description: "Impossible de retirer l'objet.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                />
+              </div>
+              
+              {/* Predefined Items List */}
+              <div className="px-4">
+                <h3 className="font-source text-bone-white font-semibold mb-2">Objets disponibles</h3>
+                <div className="grid gap-2 max-h-96 overflow-y-auto">
+                  {filterItems(
+                    inventoryCategory === 'all' ? undefined : inventoryCategory,
+                    inventorySearch,
+                    selectedTags
+                  ).map((item, index) => (
+                    <div 
+                      key={index}
+                      className="bg-cosmic-void border border-aged-gold/50 rounded p-3 flex items-center justify-between hover:border-aged-gold transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-bone-white font-semibold">{item.name}</span>
+                          <span className="text-xs text-aged-parchment">({item.category})</span>
+                        </div>
+                        <p className="text-aged-parchment text-sm">{item.description}</p>
+                        <div className="flex gap-3 mt-1 text-xs text-aged-parchment">
+                          <span>Poids: {item.weight}</span>
+                          {item.damage && <span>Dégâts: {item.damage}</span>}
+                          {item.armor && <span>Armure: +{item.armor}</span>}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          if (!selectedCharacterForInventory) return;
+                          
+                          try {
+                            await apiRequest("POST", `/api/characters/${selectedCharacterForInventory}/inventory`, {
+                              name: item.name,
+                              description: item.description,
+                              category: item.category,
+                              quantity: 1,
+                              weight: item.weight,
+                              damage: item.damage || null,
+                              armor: item.armor || null,
+                              isEquipped: false
+                            });
+                            
+                            queryClient.invalidateQueries({ queryKey: ["/api/characters", selectedCharacterForInventory, "inventory"] });
+                            
+                            toast({
+                              title: "Objet ajouté",
+                              description: `${item.name} a été ajouté à l'inventaire.`,
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Erreur",
+                              description: "Impossible d'ajouter l'objet.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                        data-testid={`button-add-${item.name}`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </DialogContent>
