@@ -14,13 +14,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
-import { OCCUPATIONS, DEFAULT_SKILLS } from "@/lib/cthulhu-data";
-import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar } from "lucide-react";
+import { OCCUPATIONS, DEFAULT_SKILLS, calculateOccupationPoints, SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar, ToggleLeft, ToggleRight, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 import type { InsertCharacter, GameSession } from "@shared/schema";
 
 const characterCreationSchema = z.object({
@@ -44,6 +46,12 @@ export default function CharacterCreation() {
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [selectedOccupation, setSelectedOccupation] = useState<string>("");
   const [skillPoints, setSkillPoints] = useState<Record<string, number>>({});
+  const [allocatedPoints, setAllocatedPoints] = useState<Record<string, number>>({});
+  const [manualSkillMode, setManualSkillMode] = useState(false);
+  const [availableOccupationPoints, setAvailableOccupationPoints] = useState(0);
+  const [availablePersonalPoints, setAvailablePersonalPoints] = useState(0);
+  const [usedOccupationPoints, setUsedOccupationPoints] = useState(0);
+  const [usedPersonalPoints, setUsedPersonalPoints] = useState(0);
   const [physicalTraits, setPhysicalTraits] = useState({
     height: "",
     weight: "",
@@ -53,6 +61,119 @@ export default function CharacterCreation() {
     style: "",
     distinctiveFeatures: [] as string[],
   });
+
+  // Initialize skills with defaults
+  useEffect(() => {
+    const baseSkills = { ...DEFAULT_SKILLS };
+    // Calculate dodge based on DEX
+    baseSkills.dodge = Math.floor(characteristics.dexterity / 2);
+    // Set language_own based on EDU
+    baseSkills.language_own = characteristics.education;
+    setSkillPoints(baseSkills);
+    setAllocatedPoints({});
+    
+    // Calculate personal interest points
+    setAvailablePersonalPoints(characteristics.intelligence * 2);
+  }, [characteristics]);
+
+  // Update occupation points when occupation changes
+  useEffect(() => {
+    if (selectedOccupation) {
+      const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
+      if (occupation) {
+        const points = calculateOccupationPoints(occupation.skillPointsFormula, characteristics);
+        setAvailableOccupationPoints(points);
+        
+        if (!manualSkillMode) {
+          // Auto-allocate skills
+          autoAllocateSkills(occupation, points);
+        }
+      }
+    }
+  }, [selectedOccupation, characteristics, manualSkillMode]);
+  
+  // Calculate used points
+  useEffect(() => {
+    let occUsed = 0;
+    let persUsed = 0;
+    
+    const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
+    const occupationSkills = occupation?.occupationSkills || [];
+    
+    Object.entries(allocatedPoints).forEach(([skill, points]) => {
+      if (occupationSkills.includes(skill)) {
+        occUsed += points;
+      } else {
+        persUsed += points;
+      }
+    });
+    
+    setUsedOccupationPoints(occUsed);
+    setUsedPersonalPoints(persUsed);
+  }, [allocatedPoints, selectedOccupation]);
+  
+  const autoAllocateSkills = (occupation: typeof OCCUPATIONS[0], totalPoints: number) => {
+    const newAllocations: Record<string, number> = {};
+    const baseSkills = { ...DEFAULT_SKILLS };
+    baseSkills.dodge = Math.floor(characteristics.dexterity / 2);
+    baseSkills.language_own = characteristics.education;
+    
+    // Distribute points evenly among occupation skills
+    const skillCount = occupation.occupationSkills.length;
+    const pointsPerSkill = Math.floor(totalPoints / skillCount);
+    const remainder = totalPoints % skillCount;
+    
+    occupation.occupationSkills.forEach((skill, index) => {
+      const baseValue = baseSkills[skill] || 0;
+      const points = pointsPerSkill + (index < remainder ? 1 : 0);
+      newAllocations[skill] = Math.min(points, 90 - baseValue); // Max 90% during creation
+    });
+    
+    // Add some personal interest points to recommended skills
+    const personalPoints = characteristics.intelligence * 2;
+    const recommendedSkills = occupation.recommendedSkills || [];
+    if (recommendedSkills.length > 0) {
+      const personalPerSkill = Math.floor(personalPoints / recommendedSkills.length);
+      recommendedSkills.forEach(skill => {
+        const currentAllocation = newAllocations[skill] || 0;
+        const baseValue = baseSkills[skill] || 0;
+        const maxAdditional = 90 - baseValue - currentAllocation;
+        newAllocations[skill] = currentAllocation + Math.min(personalPerSkill, maxAdditional);
+      });
+    }
+    
+    setAllocatedPoints(newAllocations);
+    updateSkillTotals(newAllocations);
+  };
+  
+  const updateSkillTotals = (allocations: Record<string, number>) => {
+    const baseSkills = { ...DEFAULT_SKILLS };
+    baseSkills.dodge = Math.floor(characteristics.dexterity / 2);
+    baseSkills.language_own = characteristics.education;
+    
+    const finalSkills = { ...baseSkills };
+    Object.entries(allocations).forEach(([skill, points]) => {
+      finalSkills[skill] = Math.min((baseSkills[skill] || 0) + points, 90);
+    });
+    
+    setSkillPoints(finalSkills);
+  };
+  
+  const handleSkillPointChange = (skill: string, value: number) => {
+    const baseValue = DEFAULT_SKILLS[skill] || 0;
+    const maxValue = 90 - baseValue;
+    const clampedValue = Math.max(0, Math.min(value, maxValue));
+    
+    const newAllocations = { ...allocatedPoints };
+    if (clampedValue === 0) {
+      delete newAllocations[skill];
+    } else {
+      newAllocations[skill] = clampedValue;
+    }
+    
+    setAllocatedPoints(newAllocations);
+    updateSkillTotals(newAllocations);
+  };
 
   // Check if coming from a session join flow
   const sessionFromStorage = localStorage.getItem('createCharacterForSession');
@@ -296,11 +417,8 @@ export default function CharacterCreation() {
       magicPoints: derivedStats.magicPoints,
       maxMagicPoints: derivedStats.magicPoints,
       
-      // Skills (occupation skills + default skills)
-      skills: {
-        ...DEFAULT_SKILLS,
-        ...(selectedOccupation ? skillPoints : {}),
-      },
+      // Skills (use the final calculated skills)
+      skills: skillPoints,
       
       avatarUrl: avatarUrl || undefined,
       avatarPrompt: buildDescription() || undefined,
@@ -364,7 +482,10 @@ export default function CharacterCreation() {
                         <FormLabel className="text-aged-parchment font-source">
                           Occupation
                         </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedOccupation(value);
+                        }} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger 
                               className="bg-cosmic-void border-aged-gold text-bone-white"
@@ -503,6 +624,167 @@ export default function CharacterCreation() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Skills Allocation */}
+            {selectedOccupation && (
+              <Card className="bg-charcoal border-aged-gold parchment-bg">
+                <CardHeader>
+                  <CardTitle className="font-cinzel text-aged-gold flex justify-between items-center">
+                    Compétences
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-source text-aged-parchment">
+                        {manualSkillMode ? "Allocation Manuelle" : "Allocation Automatique"}
+                      </span>
+                      <Switch
+                        checked={manualSkillMode}
+                        onCheckedChange={(checked) => {
+                          setManualSkillMode(checked);
+                          if (!checked) {
+                            // Auto-allocate when switching to automatic mode
+                            const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
+                            if (occupation) {
+                              const points = calculateOccupationPoints(occupation.skillPointsFormula, characteristics);
+                              autoAllocateSkills(occupation, points);
+                            }
+                          }
+                        }}
+                        className="data-[state=checked]:bg-aged-gold"
+                      />
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Points Available Display */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-cosmic-void rounded-lg p-4 border border-aged-gold">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-source text-aged-parchment">Points d'Occupation</span>
+                        <span className="text-sm font-bold text-aged-gold">
+                          {usedOccupationPoints} / {availableOccupationPoints}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={(usedOccupationPoints / availableOccupationPoints) * 100} 
+                        className="h-2 bg-deep-black"
+                      />
+                      <div className="mt-2 text-xs text-aged-parchment">
+                        {OCCUPATIONS.find(occ => occ.name === selectedOccupation)?.skillPointsFormula}
+                      </div>
+                    </div>
+                    
+                    <div className="bg-cosmic-void rounded-lg p-4 border border-aged-gold">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-source text-aged-parchment">Points d'Intérêts Personnels</span>
+                        <span className="text-sm font-bold text-aged-gold">
+                          {usedPersonalPoints} / {availablePersonalPoints}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={(usedPersonalPoints / availablePersonalPoints) * 100} 
+                        className="h-2 bg-deep-black"
+                      />
+                      <div className="mt-2 text-xs text-aged-parchment">
+                        INT × 2
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Occupation Skills Info */}
+                  <Alert className="bg-cosmic-void border-aged-gold">
+                    <Info className="h-4 w-4 text-aged-gold" />
+                    <AlertDescription className="text-aged-parchment">
+                      <strong className="text-bone-white">Compétences d'occupation:</strong> 
+                      {' ' + (OCCUPATIONS.find(occ => occ.name === selectedOccupation)?.occupationSkills.map(skill => 
+                        SKILL_TRANSLATIONS[skill] || skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                      ).join(', ') || 'Aucune')}
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Skills Grid */}
+                  {manualSkillMode ? (
+                    <div className="space-y-4">
+                      <div className="text-sm text-aged-parchment mb-2">
+                        Cliquez sur une compétence pour allouer des points. Maximum 90% par compétence.
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                        {Object.entries(DEFAULT_SKILLS).map(([skillKey, baseValue]) => {
+                          const occupation = OCCUPATIONS.find(occ => occ.name === selectedOccupation);
+                          const isOccupationSkill = occupation?.occupationSkills.includes(skillKey);
+                          const allocated = allocatedPoints[skillKey] || 0;
+                          const total = Math.min(baseValue + allocated, 90);
+                          const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          
+                          return (
+                            <div 
+                              key={skillKey} 
+                              className={`flex justify-between items-center p-2 rounded border ${
+                                isOccupationSkill ? 'border-aged-gold bg-cosmic-void/50' : 'border-aged-parchment/30 bg-cosmic-void/30'
+                              }`}
+                            >
+                              <div className="flex-1">
+                                <div className="font-source text-sm text-bone-white">
+                                  {skillName}
+                                  {isOccupationSkill && (
+                                    <Badge className="ml-2 bg-aged-gold text-deep-black text-xs">Occ</Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-aged-parchment">
+                                  Base: {baseValue}% {allocated > 0 && `(+${allocated})`}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={90 - baseValue}
+                                  value={allocated}
+                                  onChange={(e) => handleSkillPointChange(skillKey, parseInt(e.target.value) || 0)}
+                                  className="w-16 h-8 bg-deep-black border-aged-gold text-bone-white text-center"
+                                  data-testid={`skill-input-${skillKey}`}
+                                />
+                                <div className="text-sm font-bold text-aged-gold w-12 text-right">
+                                  {total}%
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-sm text-aged-parchment mb-2">
+                        Les compétences ont été automatiquement réparties selon votre occupation et vos intérêts.
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2">
+                        {Object.entries(skillPoints)
+                          .filter(([_, value]) => value > DEFAULT_SKILLS[_] || allocatedPoints[_])
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([skillKey, value]) => {
+                            const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const baseValue = DEFAULT_SKILLS[skillKey] || 0;
+                            const allocated = allocatedPoints[skillKey] || 0;
+                            
+                            return (
+                              <div key={skillKey} className="bg-cosmic-void rounded p-2 border border-aged-gold/50">
+                                <div className="font-source text-sm text-bone-white">
+                                  {skillName}
+                                </div>
+                                <div className="text-xs text-aged-parchment">
+                                  {value}% {allocated > 0 && `(Base: ${baseValue}% +${allocated})`}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                      <div className="text-xs text-aged-parchment italic">
+                        Passez en mode manuel pour ajuster individuellement chaque compétence.
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Session Selection */}
             {!sessionFromStorage && !sessionIdFromStorage && (
