@@ -10,6 +10,7 @@ import ConnectionIndicator from "@/components/connection-indicator";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import BuffManager from "@/components/buff-manager";
+import SkillPointsManager from "@/components/skill-points-manager";
 import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { ChapterManagerWithHistory } from "@/components/chapter-manager";
@@ -933,8 +934,36 @@ export default function GMDashboard() {
           />
         </div>
         
-        {/* Narrative and History Tools */}
+        {/* Skill Points and Narrative Tools */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Skill Points Manager */}
+          <SkillPointsManager
+            characters={characters}
+            onGrantPoints={async (characterIds, points) => {
+              // Grant points to selected characters
+              for (const charId of characterIds) {
+                const character = characters.find(c => c.id === charId);
+                if (character) {
+                  await apiRequest("POST", `/api/characters/${charId}/skill-points`, {
+                    points
+                  });
+                  
+                  // Send real-time update
+                  if (isConnected) {
+                    sendMessage('skill_points_granted', {
+                      characterId: charId,
+                      characterName: character.name,
+                      points
+                    });
+                  }
+                }
+              }
+              
+              // Refresh character data
+              queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+            }}
+          />
+          
           {/* Narrative Tools */}
           <NarrativeTools 
             onAmbiance={async (text) => {

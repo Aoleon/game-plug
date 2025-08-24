@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation";
 import DiceRoller from "@/components/dice-roller";
 import RollHistoryVisual from "@/components/roll-history-visual";
 import SanityTracker from "@/components/sanity-tracker";
+import SkillPointsDistributor from "@/components/skill-points-distributor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -708,6 +709,36 @@ export default function CharacterSheet() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Skill Points Distribution */}
+            {character.availableSkillPoints && character.availableSkillPoints > 0 && (
+              <SkillPointsDistributor
+                character={character}
+                onDistributePoints={async (skillUpdates) => {
+                  try {
+                    const response = await apiRequest("POST", `/api/characters/${characterId}/distribute-points`, {
+                      skillUpdates
+                    });
+                    
+                    toast({
+                      title: "Points distribués avec succès",
+                      description: "Vos compétences ont été améliorées.",
+                      className: "bg-eldritch-green/20 border-eldritch-green"
+                    });
+                    
+                    // Refresh character data
+                    queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
+                  } catch (error) {
+                    console.error("Error distributing points:", error);
+                    toast({
+                      title: "Erreur",
+                      description: "Impossible de distribuer les points.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              />
+            )}
 
             {/* Skills */}
             <Card className="bg-charcoal border-aged-gold parchment-bg">

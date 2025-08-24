@@ -105,6 +105,13 @@ export const SKILL_TRANSLATIONS: Record<string, string> = {
   'cthulhu_mythos': 'Mythe de Cthulhu',
 };
 
+// Skills array for easier iteration and display
+export const SKILLS = Object.entries(SKILL_TRANSLATIONS).map(([key, name]) => ({
+  key,
+  name,
+  base: 0 // Will be set from DEFAULT_SKILLS below
+}));
+
 // Call of Cthulhu 7th Edition - Base skill percentages
 export const DEFAULT_SKILLS: Record<string, number> = {
   // Interpersonal Skills

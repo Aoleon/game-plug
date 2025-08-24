@@ -86,6 +86,7 @@ export const characters = pgTable("characters", {
   // Skills (stored as JSON for flexibility)
   skills: jsonb("skills").notNull().default('{}'),
   skillsLocked: boolean("skills_locked").default(false), // Lock skills after initial creation
+  availableSkillPoints: integer("available_skill_points").default(0), // Points available to distribute
   
   // Player notes
   notes: text("notes"),

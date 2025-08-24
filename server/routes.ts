@@ -850,6 +850,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Grant skill points to character (GM only)
+  app.post('/api/characters/:id/skill-points', isAuthenticated, async (req: any, res) => {
+    const characterId = req.params.id;
+    const { points } = req.body;
+    
+    if (!points || points <= 0) {
+      return res.status(400).json({ message: "Invalid points value" });
+    }
+    
+    try {
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if user is GM of the session
+      const session = await storage.getGameSession(character.sessionId);
+      if (!session || session.gmId !== req.user?.claims?.sub) {
+        return res.status(403).json({ message: "Only the GM can grant skill points" });
+      }
+      
+      // Update available skill points
+      const currentPoints = character.availableSkillPoints || 0;
+      const updatedCharacter = await storage.updateCharacter(characterId, {
+        availableSkillPoints: currentPoints + points
+      });
+      
+      res.json(updatedCharacter);
+    } catch (error) {
+      console.error("Error granting skill points:", error);
+      res.status(500).json({ message: "Failed to grant skill points" });
+    }
+  });
+  
+  // Distribute skill points (player action)
+  app.post('/api/characters/:id/distribute-points', isAuthenticated, async (req: any, res) => {
+    const characterId = req.params.id;
+    const { skillUpdates } = req.body;
+    
+    if (!skillUpdates || typeof skillUpdates !== 'object') {
+      return res.status(400).json({ message: "Invalid skill updates" });
+    }
+    
+    try {
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if user owns the character or is GM
+      const session = await storage.getGameSession(character.sessionId);
+      if (character.userId !== req.user?.claims?.sub && session?.gmId !== req.user?.claims?.sub) {
+        return res.status(403).json({ message: "Unauthorized to modify this character" });
+      }
+      
+      // Calculate total points to be used
+      const currentSkills = character.skills as Record<string, number> || {};
+      let totalPointsUsed = 0;
+      const updatedSkills = { ...currentSkills };
+      
+      Object.entries(skillUpdates).forEach(([skillName, newValue]) => {
+        const currentValue = currentSkills[skillName] || 0;
+        const newValueNum = newValue as number;
+        const pointsAdded = newValueNum - currentValue;
+        if (pointsAdded > 0) {
+          totalPointsUsed += pointsAdded;
+          updatedSkills[skillName] = newValueNum;
+        }
+      });
+      
+      // Check if character has enough points
+      const availablePoints = character.availableSkillPoints || 0;
+      if (totalPointsUsed > availablePoints) {
+        return res.status(400).json({ message: "Not enough skill points available" });
+      }
+      
+      // Update character skills and available points
+      const updatedCharacter = await storage.updateCharacter(characterId, {
+        skills: updatedSkills,
+        availableSkillPoints: availablePoints - totalPointsUsed
+      });
+      
+      res.json(updatedCharacter);
+    } catch (error) {
+      console.error("Error distributing skill points:", error);
+      res.status(500).json({ message: "Failed to distribute skill points" });
+    }
+  });
+
   // Active effect routes
   app.post('/api/characters/:id/effects', isAuthenticated, async (req: any, res) => {
     try {
