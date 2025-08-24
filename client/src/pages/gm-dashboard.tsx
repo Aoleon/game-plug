@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +25,7 @@ import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2 
+  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit 
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -38,6 +38,7 @@ interface CharacterWithDetails extends Character {
 export default function GMDashboard() {
   const params = useParams();
   const sessionId = params.sessionId;
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const { playRoll, playCritical, playFumble } = useDiceSound();
@@ -437,19 +438,32 @@ export default function GMDashboard() {
           {characters.map((character) => (
             <Card key={character.id} className="bg-charcoal border-aged-gold parchment-bg relative">
               <CardContent className="p-4">
-                {/* Delete button */}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setDeleteCharacterId(character.id);
-                    setDeleteCharacterName(character.name);
-                  }}
-                  className="absolute top-2 right-2 text-blood-burgundy hover:text-dark-crimson hover:bg-blood-burgundy/10 p-1"
-                  data-testid={`button-delete-character-${character.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {/* Edit and Delete buttons */}
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setLocation(`/character-edit/${sessionId}/${character.id}`)}
+                    className="text-aged-gold hover:text-bone-white hover:bg-aged-gold/10 p-1"
+                    data-testid={`button-edit-character-${character.id}`}
+                    title="Éditer le personnage"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setDeleteCharacterId(character.id);
+                      setDeleteCharacterName(character.name);
+                    }}
+                    className="text-blood-burgundy hover:text-dark-crimson hover:bg-blood-burgundy/10 p-1"
+                    data-testid={`button-delete-character-${character.id}`}
+                    title="Supprimer le personnage"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 
                 <div className="flex items-center space-x-3 mb-4">
                   {character.avatarUrl ? (

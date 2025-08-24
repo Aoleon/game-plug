@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import CharacterCreation from "@/pages/character-creation";
 import CharacterSheet from "@/pages/character-sheet";
+import CharacterEdit from "@/pages/character-edit";
 import GMDashboard from "@/pages/gm-dashboard";
 import SessionManager from "@/pages/session-manager";
 import JoinSession from "@/pages/join-session";
@@ -34,6 +35,7 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/gm/:sessionId" component={GMDashboard} />
+          <Route path="/character-edit/:sessionId/:id" component={CharacterEdit} />
           <Route path="/sessions" component={SessionManager} />
         </>
       )}

@@ -396,6 +396,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // You could also return an error here instead:
         // return res.status(403).json({ message: "Skills are locked and cannot be modified" });
       }
+      
+      // GM can unlock skills when editing
+      if (isGM && updateData.skills !== undefined) {
+        updateData.skillsLocked = false;
+      }
       const character = await storage.updateCharacter(req.params.id, updateData);
       
       // Apply automatic status effects if HP or Sanity changed
