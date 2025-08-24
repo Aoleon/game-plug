@@ -16,6 +16,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
 import { OCCUPATIONS, DEFAULT_SKILLS } from "@/lib/cthulhu-data";
 import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -42,6 +44,15 @@ export default function CharacterCreation() {
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [selectedOccupation, setSelectedOccupation] = useState<string>("");
   const [skillPoints, setSkillPoints] = useState<Record<string, number>>({});
+  const [physicalTraits, setPhysicalTraits] = useState({
+    height: "",
+    weight: "",
+    hairColor: "",
+    eyeColor: "",
+    build: "",
+    style: "",
+    distinctiveFeatures: [] as string[],
+  });
 
   // Check if coming from a session join flow
   const sessionFromStorage = localStorage.getItem('createCharacterForSession');
@@ -138,14 +149,33 @@ export default function CharacterCreation() {
     });
   };
 
+  const buildDescription = () => {
+    const parts = [];
+    
+    if (physicalTraits.height) parts.push(`Taille: ${physicalTraits.height}`);
+    if (physicalTraits.weight) parts.push(`Poids: ${physicalTraits.weight}`);
+    if (physicalTraits.build) parts.push(`Corpulence: ${physicalTraits.build}`);
+    if (physicalTraits.hairColor) parts.push(`Cheveux ${physicalTraits.hairColor}`);
+    if (physicalTraits.eyeColor) parts.push(`Yeux ${physicalTraits.eyeColor}`);
+    if (physicalTraits.style) parts.push(`Style: ${physicalTraits.style}`);
+    if (physicalTraits.distinctiveFeatures.length > 0) {
+      parts.push(`Signes distinctifs: ${physicalTraits.distinctiveFeatures.join(", ")}`);
+    }
+    
+    const customDescription = form.getValues("avatarDescription");
+    if (customDescription) parts.push(customDescription);
+    
+    return parts.join(". ");
+  };
+
   const handleGenerateAvatar = () => {
-    const description = form.getValues("avatarDescription");
+    const description = buildDescription();
     const name = form.getValues("name");
     
     if (!description || !name) {
       toast({
         title: "Information manquante",
-        description: "Veuillez remplir le nom et la description avant de générer le portrait.",
+        description: "Veuillez remplir le nom et au moins quelques traits physiques avant de générer le portrait.",
         variant: "destructive",
       });
       return;
@@ -203,7 +233,7 @@ export default function CharacterCreation() {
       },
       
       avatarUrl: avatarUrl || undefined,
-      avatarPrompt: data.avatarDescription || undefined,
+      avatarPrompt: buildDescription() || undefined,
       isActive: true,
     };
 
@@ -408,58 +438,239 @@ export default function CharacterCreation() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
+                <Tabs defaultValue="selectors" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-cosmic-void border-aged-gold">
+                    <TabsTrigger value="selectors" className="text-bone-white data-[state=active]:bg-aged-gold data-[state=active]:text-deep-black">
+                      Sélecteurs Intuitifs
+                    </TabsTrigger>
+                    <TabsTrigger value="description" className="text-bone-white data-[state=active]:bg-aged-gold data-[state=active]:text-deep-black">
+                      Description Libre
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="selectors" className="space-y-6 mt-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        {/* Physical Traits */}
+                        <div className="space-y-3">
+                          <h4 className="font-cinzel text-aged-gold text-sm uppercase tracking-wide">
+                            Caractéristiques Physiques
+                          </h4>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-aged-parchment text-xs">Taille</Label>
+                              <Select 
+                                value={physicalTraits.height} 
+                                onValueChange={(value) => setPhysicalTraits(prev => ({ ...prev, height: value }))}
+                              >
+                                <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white h-9" data-testid="select-height">
+                                  <SelectValue placeholder="Choisir" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-cosmic-void border-aged-gold">
+                                  <SelectItem value="très petit(e) (moins d'1m50)">Très petit(e)</SelectItem>
+                                  <SelectItem value="petit(e) (1m50-1m60)">Petit(e)</SelectItem>
+                                  <SelectItem value="de taille moyenne (1m60-1m70)">Moyen(ne)</SelectItem>
+                                  <SelectItem value="grand(e) (1m70-1m80)">Grand(e)</SelectItem>
+                                  <SelectItem value="très grand(e) (plus d'1m80)">Très grand(e)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label className="text-aged-parchment text-xs">Corpulence</Label>
+                              <Select 
+                                value={physicalTraits.build} 
+                                onValueChange={(value) => setPhysicalTraits(prev => ({ ...prev, build: value }))}
+                              >
+                                <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white h-9" data-testid="select-build">
+                                  <SelectValue placeholder="Choisir" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-cosmic-void border-aged-gold">
+                                  <SelectItem value="très mince">Très mince</SelectItem>
+                                  <SelectItem value="mince">Mince</SelectItem>
+                                  <SelectItem value="de corpulence moyenne">Moyenne</SelectItem>
+                                  <SelectItem value="corpulent(e)">Corpulent(e)</SelectItem>
+                                  <SelectItem value="imposant(e)">Imposant(e)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-aged-parchment text-xs">Cheveux</Label>
+                              <Select 
+                                value={physicalTraits.hairColor} 
+                                onValueChange={(value) => setPhysicalTraits(prev => ({ ...prev, hairColor: value }))}
+                              >
+                                <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white h-9" data-testid="select-hair-color">
+                                  <SelectValue placeholder="Couleur" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-cosmic-void border-aged-gold">
+                                  <SelectItem value="noirs">Noirs</SelectItem>
+                                  <SelectItem value="bruns foncés">Bruns foncés</SelectItem>
+                                  <SelectItem value="châtains">Châtains</SelectItem>
+                                  <SelectItem value="blonds">Blonds</SelectItem>
+                                  <SelectItem value="roux">Roux</SelectItem>
+                                  <SelectItem value="gris">Gris</SelectItem>
+                                  <SelectItem value="blancs">Blancs</SelectItem>
+                                  <SelectItem value="chauve">Chauve</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <Label className="text-aged-parchment text-xs">Yeux</Label>
+                              <Select 
+                                value={physicalTraits.eyeColor} 
+                                onValueChange={(value) => setPhysicalTraits(prev => ({ ...prev, eyeColor: value }))}
+                              >
+                                <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white h-9" data-testid="select-eye-color">
+                                  <SelectValue placeholder="Couleur" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-cosmic-void border-aged-gold">
+                                  <SelectItem value="bruns">Bruns</SelectItem>
+                                  <SelectItem value="bleus">Bleus</SelectItem>
+                                  <SelectItem value="verts">Verts</SelectItem>
+                                  <SelectItem value="noisette">Noisette</SelectItem>
+                                  <SelectItem value="gris">Gris</SelectItem>
+                                  <SelectItem value="noirs">Noirs</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Style vestimentaire années 1920 */}
+                        <div className="space-y-3">
+                          <h4 className="font-cinzel text-aged-gold text-sm uppercase tracking-wide">
+                            Style Vestimentaire (Années 1920)
+                          </h4>
+                          
+                          <Select 
+                            value={physicalTraits.style} 
+                            onValueChange={(value) => setPhysicalTraits(prev => ({ ...prev, style: value }))}
+                          >
+                            <SelectTrigger className="bg-cosmic-void border-aged-gold text-bone-white" data-testid="select-style">
+                              <SelectValue placeholder="Choisir un style d'époque" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-cosmic-void border-aged-gold">
+                              <SelectItem value="gentleman élégant en costume trois-pièces">Gentleman élégant</SelectItem>
+                              <SelectItem value="flapper moderne avec robe courte">Flapper moderne</SelectItem>
+                              <SelectItem value="bourgeois conservateur">Bourgeois conservateur</SelectItem>
+                              <SelectItem value="universitaire en tweed">Universitaire</SelectItem>
+                              <SelectItem value="ouvrier en vêtements pratiques">Ouvrier</SelectItem>
+                              <SelectItem value="dandy sophistiqué">Dandy sophistiqué</SelectItem>
+                              <SelectItem value="dame de la haute société">Dame de société</SelectItem>
+                              <SelectItem value="bohème artistique">Bohème artistique</SelectItem>
+                              <SelectItem value="aventurier en tenue de voyage">Aventurier</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Signes distinctifs */}
+                        <div className="space-y-3">
+                          <h4 className="font-cinzel text-aged-gold text-sm uppercase tracking-wide">
+                            Signes Distinctifs
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 gap-2">
+                            {[
+                              'Cicatrice visible', 'Lunettes', 'Moustache', 'Barbe', 'Tatouage',
+                              'Canne de marche', 'Bijoux voyants', 'Regard perçant', 
+                              'Sourire énigmatique', 'Tic nerveux', 'Démarche particulière'
+                            ].map((feature) => (
+                              <div key={feature} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={feature}
+                                  checked={physicalTraits.distinctiveFeatures.includes(feature)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setPhysicalTraits(prev => ({
+                                        ...prev,
+                                        distinctiveFeatures: [...prev.distinctiveFeatures, feature]
+                                      }));
+                                    } else {
+                                      setPhysicalTraits(prev => ({
+                                        ...prev,
+                                        distinctiveFeatures: prev.distinctiveFeatures.filter(f => f !== feature)
+                                      }));
+                                    }
+                                  }}
+                                  className="border-aged-gold data-[state=checked]:bg-aged-gold"
+                                  data-testid={`checkbox-${feature.toLowerCase().replace(/\s+/g, '-')}`}
+                                />
+                                <Label 
+                                  htmlFor={feature} 
+                                  className="text-aged-parchment text-sm cursor-pointer"
+                                >
+                                  {feature}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Portrait Preview */}
+                      <div className="flex justify-center">
+                        <div className="w-48 h-48 bg-cosmic-void border border-aged-gold rounded-lg flex items-center justify-center">
+                          {avatarUrl ? (
+                            <img 
+                              src={avatarUrl} 
+                              alt="Portrait du personnage" 
+                              className="w-full h-full object-cover rounded-lg"
+                              data-testid="img-avatar-preview"
+                            />
+                          ) : (
+                            <div className="text-center text-aged-parchment">
+                              <Wand2 className="mx-auto h-12 w-12 mb-2" />
+                              <p className="text-sm">Portrait à générer</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleGenerateAvatar}
+                      disabled={isGeneratingAvatar}
+                      className="w-full bg-eldritch-green hover:bg-green-800 text-bone-white"
+                      data-testid="button-generate-avatar"
+                    >
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      {isGeneratingAvatar ? "Génération..." : "Générer le Portrait IA"}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="description" className="space-y-4 mt-6">
                     <FormField
                       control={form.control}
                       name="avatarDescription"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-aged-parchment font-source">
-                            Description physique
+                            Description physique personnalisée
                           </FormLabel>
                           <FormControl>
                             <Textarea 
                               {...field}
                               className="bg-cosmic-void border-aged-gold text-bone-white h-32"
-                              placeholder="Décrivez l'apparence de votre personnage (âge, couleur des cheveux, style vestimentaire années 1920...)"
+                              placeholder="Décrivez librement l'apparence de votre personnage (âge, couleur des cheveux, style vestimentaire années 1920...)"
                               data-testid="textarea-avatar-description"
                             />
                           </FormControl>
                           <FormMessage />
+                          <FormDescription className="text-aged-parchment text-sm">
+                            Cette description s'ajoutera aux sélecteurs choisis dans l'onglet précédent.
+                          </FormDescription>
                         </FormItem>
                       )}
                     />
-                    <Button
-                      type="button"
-                      onClick={handleGenerateAvatar}
-                      disabled={isGeneratingAvatar}
-                      className="mt-4 bg-eldritch-green hover:bg-green-800 text-bone-white"
-                      data-testid="button-generate-avatar"
-                    >
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      {isGeneratingAvatar ? "Génération..." : "Générer le Portrait IA"}
-                    </Button>
-                  </div>
-                  
-                  <div className="flex justify-center">
-                    <div className="w-48 h-48 bg-cosmic-void border border-aged-gold rounded-lg flex items-center justify-center">
-                      {avatarUrl ? (
-                        <img 
-                          src={avatarUrl} 
-                          alt="Portrait du personnage" 
-                          className="w-full h-full object-cover rounded-lg"
-                          data-testid="img-avatar-preview"
-                        />
-                      ) : (
-                        <div className="text-center text-aged-parchment">
-                          <Wand2 className="mx-auto h-12 w-12 mb-2" />
-                          <p className="text-sm">Portrait à générer</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
