@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -27,6 +28,7 @@ export default function CharacterSheet() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [rollHistory, setRollHistory] = useState<any[]>([]);
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
 
   // Players don't need to be authenticated to view their character sheet
   // They just need to have joined a session
@@ -42,6 +44,32 @@ export default function CharacterSheet() {
     retry: false,
     enabled: !!character?.sessionId,
   });
+
+  const handleGenerateAvatar = async () => {
+    setIsGeneratingAvatar(true);
+    try {
+      const response = await apiRequest("POST", `/api/characters/${characterId}/generate-avatar`);
+      const data = await response.json();
+      
+      toast({
+        title: "Portrait généré",
+        description: "Votre nouveau portrait a été créé avec succès.",
+      });
+      
+      // Refresh character data to show new avatar
+      queryClient.invalidateQueries({ queryKey: ["/api/characters", characterId] });
+      
+    } catch (error) {
+      console.error("Error generating avatar:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le portrait.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAvatar(false);
+    }
+  };
 
   if (characterLoading) {
     return (
@@ -190,21 +218,33 @@ export default function CharacterSheet() {
           <CardContent className="p-6">
             <div className="grid md:grid-cols-4 gap-6">
               {/* Portrait */}
-              <div className="flex justify-center">
-                {character.avatarUrl ? (
-                  <img 
-                    src={character.avatarUrl} 
-                    alt={`Portrait de ${character.name}`}
-                    className="w-48 h-48 rounded-lg border-2 border-aged-gold object-cover"
-                    data-testid="img-character-portrait"
-                  />
-                ) : (
-                  <div className="w-48 h-48 bg-cosmic-void border-2 border-aged-gold rounded-lg flex items-center justify-center">
-                    <span className="text-aged-parchment text-center">
-                      Aucun portrait
-                    </span>
-                  </div>
-                )}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex justify-center">
+                  {character.avatarUrl ? (
+                    <img 
+                      src={character.avatarUrl} 
+                      alt={`Portrait de ${character.name}`}
+                      className="w-48 h-48 rounded-lg border-2 border-aged-gold object-cover"
+                      data-testid="img-character-portrait"
+                    />
+                  ) : (
+                    <div className="w-48 h-48 bg-cosmic-void border-2 border-aged-gold rounded-lg flex items-center justify-center">
+                      <span className="text-aged-parchment text-center">
+                        Aucun portrait
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={handleGenerateAvatar}
+                  disabled={isGeneratingAvatar}
+                  className="bg-eldritch-green hover:bg-green-800 text-bone-white"
+                  size="sm"
+                  data-testid="button-regenerate-avatar"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isGeneratingAvatar ? 'animate-spin' : ''}`} />
+                  {isGeneratingAvatar ? "Génération..." : "Générer Portrait"}
+                </Button>
               </div>
 
               {/* Basic Info */}

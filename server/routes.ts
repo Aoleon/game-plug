@@ -472,6 +472,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate avatar for a single character (Player or GM)
+  app.post('/api/characters/:characterId/generate-avatar', async (req: any, res) => {
+    try {
+      const characterId = req.params.characterId;
+      
+      // Get character data
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Build description based on character data
+      let description = "";
+      
+      // Add gender if available
+      if (character.gender) {
+        description += `${character.gender}, `;
+      }
+      
+      // Add physical characteristics if we have them
+      if (character.appearance && character.appearance >= 60) {
+        description += "attractive appearance, ";
+      } else if (character.appearance && character.appearance <= 30) {
+        description += "weathered appearance, ";
+      }
+      
+      // Add intelligence/education hints
+      if (character.education && character.education >= 80) {
+        description += "scholarly and intellectual demeanor, ";
+      } else if (character.intelligence && character.intelligence >= 70) {
+        description += "intelligent and sharp gaze, ";
+      }
+      
+      // Add strength/constitution hints
+      if (character.strength && character.strength >= 70) {
+        description += "strong and robust build, ";
+      } else if (character.constitution && character.constitution >= 70) {
+        description += "healthy and vigorous appearance, ";
+      }
+      
+      // Default to a mysterious investigator look if no specific traits
+      if (description === "") {
+        description = "mysterious investigator with a determined expression, ";
+      }
+      
+      description += "dramatic shadows, vintage 1920s style";
+      
+      const { url } = await generateCharacterAvatar(
+        description, 
+        character.name, 
+        character.occupation || undefined, 
+        character.age || undefined
+      );
+      
+      // Update character with avatar URL
+      await storage.updateCharacter(character.id, {
+        avatarUrl: url,
+        avatarPrompt: description
+      });
+      
+      res.json({
+        message: "Avatar generated successfully",
+        avatarUrl: url,
+        characterId: character.id,
+        characterName: character.name
+      });
+      
+    } catch (error) {
+      console.error("Error generating avatar:", error);
+      res.status(500).json({ message: "Failed to generate avatar" });
+    }
+  });
+
   // Generate avatars for all characters in a session (GM only)
   app.post('/api/sessions/:sessionId/generate-all-avatars', isAuthenticated, async (req: any, res) => {
     try {
