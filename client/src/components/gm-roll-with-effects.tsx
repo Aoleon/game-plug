@@ -330,10 +330,10 @@ export default function GMRollWithEffects({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLL_PRESETS.map(preset => {
+                  {ROLL_PRESETS.map((preset, index) => {
                     const Icon = preset.icon;
                     return (
-                      <SelectItem key={preset.value} value={preset.value}>
+                      <SelectItem key={`${preset.value}-${index}`} value={preset.value}>
                         <div className="flex items-center gap-2">
                           <Icon className={cn("h-4 w-4", getEffectColor(preset.effectType || ''))} />
                           <span>{preset.label}</span>
