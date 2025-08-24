@@ -434,6 +434,53 @@ export default function GMDashboard() {
     setEffectModalOpen(true);
   };
 
+  const applyEnvironmentalEffect = async (effectType: 'blessing' | 'curse') => {
+    try {
+      const effectName = effectType === 'blessing' ? 'Bénédiction Divine' : 'Malédiction Ancienne';
+      const effectDescription = effectType === 'blessing' 
+        ? 'Bonus de +1d10 à tous les jets pendant 24h' 
+        : 'Malus de -1d10 à tous les jets pendant 24h';
+      const effectValue = effectType === 'blessing' ? '+1d10' : '-1d10';
+      
+      // Appliquer l'effet à tous les personnages
+      const promises = characters.map(async (character) => {
+        await apiRequest("POST", `/api/characters/${character.id}/effects`, {
+          type: effectType === 'blessing' ? 'buff' : 'debuff',
+          name: effectName,
+          description: effectDescription,
+          value: effectValue,
+          duration: 24, // 24 heures
+        });
+      });
+      
+      await Promise.all(promises);
+      
+      // Rafraîchir les données
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+      
+      toast({
+        title: effectType === 'blessing' ? "Bénédiction appliquée" : "Malédiction appliquée",
+        description: `${effectName} a été appliquée à tous les personnages.`,
+      });
+      
+      // Enregistrer dans l'historique
+      if (isConnected) {
+        sendMessage('environmental_effect', {
+          effectType,
+          effectName,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      console.error('Error applying environmental effect:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'appliquer l'effet environnemental.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading || sessionLoading || charactersLoading) {
     return (
       <div className="min-h-screen bg-deep-black flex items-center justify-center">
@@ -851,11 +898,19 @@ export default function GMDashboard() {
               <div>
                 <h3 className="font-source text-sm text-aged-gold mb-3">Effets Environnementaux</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button className="bg-eldritch-green hover:bg-green-800 text-bone-white text-xs">
+                  <Button 
+                    onClick={() => applyEnvironmentalEffect('blessing')}
+                    className="bg-eldritch-green hover:bg-green-800 text-bone-white text-xs"
+                    data-testid="button-blessing"
+                  >
                     <Wand2 className="mr-1 h-3 w-3" />
                     Bénédiction
                   </Button>
-                  <Button className="bg-charcoal hover:bg-dark-stone border border-aged-gold text-bone-white text-xs">
+                  <Button 
+                    onClick={() => applyEnvironmentalEffect('curse')}
+                    className="bg-charcoal hover:bg-dark-stone border border-aged-gold text-bone-white text-xs"
+                    data-testid="button-curse"
+                  >
                     <AlertTriangle className="mr-1 h-3 w-3" />
                     Malédiction
                   </Button>

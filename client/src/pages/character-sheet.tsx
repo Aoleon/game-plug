@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -489,25 +489,36 @@ export default function CharacterSheet() {
                     </div>
                   ))}
 
-                  {character.activeEffects.map((effect) => (
-                    <div key={effect.id} className="bg-cosmic-void border border-aged-gold rounded p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-source text-bone-white font-semibold">
-                            {effect.name}
-                          </h4>
-                          {effect.description && (
-                            <p className="text-aged-parchment text-sm mt-1">
-                              {effect.description}
-                            </p>
-                          )}
+                  {character.activeEffects.map((effect) => {
+                    const isBlessing = effect.name?.includes('Bénédiction');
+                    const isCurse = effect.name?.includes('Malédiction');
+                    const borderColor = isBlessing ? 'border-eldritch-green' : isCurse ? 'border-blood-burgundy' : 'border-aged-gold';
+                    const bgColor = isBlessing ? 'bg-eldritch-green/10' : isCurse ? 'bg-blood-burgundy/10' : 'bg-cosmic-void';
+                    
+                    return (
+                      <div key={effect.id} className={`${bgColor} border ${borderColor} rounded p-3`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-start gap-2">
+                            {isBlessing && <Wand2 className="h-5 w-5 text-eldritch-green mt-0.5" />}
+                            {isCurse && <AlertTriangle className="h-5 w-5 text-blood-burgundy mt-0.5" />}
+                            <div>
+                              <h4 className="font-source text-bone-white font-semibold">
+                                {effect.name}
+                              </h4>
+                              {effect.description && (
+                                <p className="text-aged-parchment text-sm mt-1">
+                                  {effect.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-aged-gold">
+                            {effect.type}
+                          </span>
                         </div>
-                        <span className="text-xs text-aged-gold">
-                          {effect.type}
-                        </span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
@@ -564,8 +575,12 @@ export default function CharacterSheet() {
                         <div className="flex items-center gap-2">
                           {effect.type === 'damage' && <Heart className="h-4 w-4 text-red-500" />}
                           {effect.type === 'sanity_loss' && <Brain className="h-4 w-4 text-purple-500" />}
-                          {effect.type === 'buff' && <Shield className="h-4 w-4 text-green-500" />}
-                          {effect.type === 'debuff' && <Shield className="h-4 w-4 text-red-500" />}
+                          {effect.type === 'buff' && (
+                            effect.name?.includes('Bénédiction') ? <Wand2 className="h-4 w-4 text-eldritch-green" /> : <Shield className="h-4 w-4 text-green-500" />
+                          )}
+                          {effect.type === 'debuff' && (
+                            effect.name?.includes('Malédiction') ? <AlertTriangle className="h-4 w-4 text-blood-burgundy" /> : <Shield className="h-4 w-4 text-red-500" />
+                          )}
                           <span className="text-bone-white font-source">{effect.name}</span>
                           {effect.value && (
                             <span className="text-aged-gold ml-auto">
