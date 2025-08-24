@@ -25,7 +25,7 @@ import { SANITY_PRESETS, PHOBIAS, MANIAS } from "@/lib/cthulhu-data";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
-  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit 
+  Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit, Image 
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -52,6 +52,7 @@ export default function GMDashboard() {
   const [copyStatus, setCopyStatus] = useState(false);
   const [deleteCharacterId, setDeleteCharacterId] = useState<string | null>(null);
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
+  const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -260,6 +261,44 @@ export default function GMDashboard() {
     }
   };
 
+  const handleGenerateAllAvatars = async () => {
+    setIsGeneratingAvatars(true);
+    try {
+      const data = await apiRequest("POST", `/api/sessions/${sessionId}/generate-all-avatars`);
+      
+      if (data.generated > 0) {
+        toast({
+          title: "Portraits générés",
+          description: `${data.generated} portrait(s) ont été créés avec succès.`,
+        });
+        // Refresh character list to show new avatars
+        queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+      } else {
+        toast({
+          title: "Aucun portrait à générer",
+          description: "Tous les personnages ont déjà un portrait.",
+        });
+      }
+      
+      if (data.failed > 0) {
+        toast({
+          title: "Erreurs de génération",
+          description: `${data.failed} portrait(s) n'ont pas pu être générés.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating avatars:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer les portraits.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAvatars(false);
+    }
+  };
+
   const handleRollWithEffects = async (result: any) => {
     // Handle the roll results
     const rollEntries = Array.from(result.results.entries()) as [string, number][];
@@ -420,6 +459,15 @@ export default function GMDashboard() {
               </div>
               <div className="flex items-center space-x-4">
                 <ConnectionIndicator isConnected={isConnected} />
+                <Button
+                  onClick={handleGenerateAllAvatars}
+                  disabled={isGeneratingAvatars}
+                  className="bg-eldritch-green hover:bg-green-800 text-bone-white mr-2"
+                  data-testid="button-generate-all-avatars"
+                >
+                  <Image className="mr-2 h-4 w-4" />
+                  {isGeneratingAvatars ? "Génération..." : "Générer Portraits"}
+                </Button>
                 <Button 
                   onClick={() => handleGMRoll("1d100")}
                   className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white"

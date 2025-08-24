@@ -472,6 +472,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate avatars for all characters in a session (GM only)
+  app.post('/api/sessions/:sessionId/generate-all-avatars', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const userId = req.user.claims.sub;
+      
+      // Check if user is GM
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can generate avatars for all characters" });
+      }
+      
+      // Get all characters in the session without avatars
+      const characters = await storage.getCharactersBySession(sessionId);
+      const charactersWithoutAvatars = characters.filter((c: any) => !c.avatarUrl);
+      
+      if (charactersWithoutAvatars.length === 0) {
+        return res.json({ 
+          message: "All characters already have avatars", 
+          generated: 0 
+        });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      for (const character of charactersWithoutAvatars) {
+        try {
+          // Build description based on character data
+          let description = "";
+          
+          // Add gender if available
+          if (character.gender) {
+            description += `${character.gender}, `;
+          }
+          
+          // Add physical characteristics if we have them
+          if (character.appearance && character.appearance >= 60) {
+            description += "attractive appearance, ";
+          } else if (character.appearance && character.appearance <= 30) {
+            description += "weathered appearance, ";
+          }
+          
+          // Add intelligence/education hints
+          if (character.education && character.education >= 80) {
+            description += "scholarly and intellectual demeanor, ";
+          } else if (character.intelligence && character.intelligence >= 70) {
+            description += "intelligent and sharp gaze, ";
+          }
+          
+          // Add strength/constitution hints
+          if (character.strength && character.strength >= 70) {
+            description += "strong and robust build, ";
+          } else if (character.constitution && character.constitution >= 70) {
+            description += "healthy and vigorous appearance, ";
+          }
+          
+          // Default to a mysterious investigator look if no specific traits
+          if (description === "") {
+            description = "mysterious investigator with a determined expression, ";
+          }
+          
+          description += "dramatic shadows, vintage 1920s style";
+          
+          const { url } = await generateCharacterAvatar(
+            description, 
+            character.name, 
+            character.occupation || undefined, 
+            character.age || undefined
+          );
+          
+          // Update character with avatar URL
+          await storage.updateCharacter(character.id, {
+            avatarUrl: url,
+            avatarPrompt: description
+          });
+          
+          results.push({
+            characterId: character.id,
+            characterName: character.name,
+            avatarUrl: url
+          });
+          
+          // Add a small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          console.error(`Failed to generate avatar for ${character.name}:`, error);
+          errors.push({
+            characterId: character.id,
+            characterName: character.name,
+            error: "Failed to generate avatar"
+          });
+        }
+      }
+      
+      res.json({
+        message: `Generated ${results.length} avatars`,
+        generated: results.length,
+        failed: errors.length,
+        results,
+        errors
+      });
+      
+    } catch (error) {
+      console.error("Error generating avatars:", error);
+      res.status(500).json({ message: "Failed to generate avatars" });
+    }
+  });
+
   // Sanity condition routes
   app.post('/api/characters/:id/sanity-conditions', isAuthenticated, async (req, res) => {
     try {
