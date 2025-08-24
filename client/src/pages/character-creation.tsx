@@ -118,27 +118,76 @@ export default function CharacterCreation() {
     baseSkills.dodge = Math.floor(characteristics.dexterity / 2);
     baseSkills.language_own = characteristics.education;
     
-    // Distribute points evenly among occupation skills
-    const skillCount = occupation.occupationSkills.length;
-    const pointsPerSkill = Math.floor(totalPoints / skillCount);
-    const remainder = totalPoints % skillCount;
+    // Get age from form
+    const age = form.getValues('age') || 21;
     
+    // Calculate age-based bonuses
+    let ageBonus = 0;
+    if (age >= 40 && age < 50) {
+      ageBonus = 10; // Bonus experience points for mature characters
+    } else if (age >= 50 && age < 60) {
+      ageBonus = 20;
+    } else if (age >= 60) {
+      ageBonus = 30;
+    }
+    
+    // Priority skills based on occupation (higher priority gets more points)
+    const skillPriorities: Record<string, number> = {};
     occupation.occupationSkills.forEach((skill, index) => {
+      // First 4 skills get higher priority
+      skillPriorities[skill] = index < 4 ? 2 : 1;
+    });
+    
+    // Calculate total priority weight
+    const totalWeight = Object.values(skillPriorities).reduce((sum, weight) => sum + weight, 0);
+    
+    // Distribute occupation points based on priority
+    const adjustedTotalPoints = totalPoints + ageBonus;
+    occupation.occupationSkills.forEach((skill) => {
       const baseValue = baseSkills[skill] || 0;
-      const points = pointsPerSkill + (index < remainder ? 1 : 0);
+      const weight = skillPriorities[skill];
+      const points = Math.floor((adjustedTotalPoints * weight) / totalWeight);
       newAllocations[skill] = Math.min(points, 90 - baseValue); // Max 90% during creation
     });
     
-    // Add some personal interest points to recommended skills
+    // Add personal interest points with age-based distribution
     const personalPoints = characteristics.intelligence * 2;
     const recommendedSkills = occupation.recommendedSkills || [];
-    if (recommendedSkills.length > 0) {
-      const personalPerSkill = Math.floor(personalPoints / recommendedSkills.length);
-      recommendedSkills.forEach(skill => {
+    
+    // Add some essential skills based on age and experience
+    const essentialSkills = ['listen', 'spot_hidden', 'psychology'];
+    if (age >= 30) {
+      essentialSkills.push('credit_rating'); // Older characters have better credit
+    }
+    
+    const allPersonalSkills = Array.from(new Set([...recommendedSkills, ...essentialSkills]));
+    
+    if (allPersonalSkills.length > 0) {
+      // Distribute 60% to recommended, 40% to essential skills
+      const recommendedPoints = Math.floor(personalPoints * 0.6);
+      const essentialPoints = personalPoints - recommendedPoints;
+      
+      // Allocate to recommended skills
+      if (recommendedSkills.length > 0) {
+        const pointsPerRecommended = Math.floor(recommendedPoints / recommendedSkills.length);
+        recommendedSkills.forEach(skill => {
+          const currentAllocation = newAllocations[skill] || 0;
+          const baseValue = baseSkills[skill] || 0;
+          const maxAdditional = 90 - baseValue - currentAllocation;
+          newAllocations[skill] = currentAllocation + Math.min(pointsPerRecommended, maxAdditional);
+        });
+      }
+      
+      // Allocate to essential skills
+      const pointsPerEssential = Math.floor(essentialPoints / essentialSkills.length);
+      essentialSkills.forEach(skill => {
         const currentAllocation = newAllocations[skill] || 0;
         const baseValue = baseSkills[skill] || 0;
         const maxAdditional = 90 - baseValue - currentAllocation;
-        newAllocations[skill] = currentAllocation + Math.min(personalPerSkill, maxAdditional);
+        const additionalPoints = Math.min(pointsPerEssential, maxAdditional);
+        if (additionalPoints > 0) {
+          newAllocations[skill] = currentAllocation + additionalPoints;
+        }
       });
     }
     
@@ -698,12 +747,21 @@ export default function CharacterCreation() {
               </CardContent>
             </Card>
 
-            {/* Skills Allocation */}
-            {selectedOccupation && (
-              <Card className="bg-charcoal border-aged-gold parchment-bg">
-                <CardHeader>
-                  <CardTitle className="font-cinzel text-aged-gold flex justify-between items-center">
+            {/* Skills Allocation - Always visible */}
+            <Card className={`bg-charcoal parchment-bg ${
+              selectedOccupation ? 'border-aged-gold' : 'border-2 border-blood-burgundy'
+            }`}>
+              <CardHeader>
+                <CardTitle className="font-cinzel text-aged-gold flex justify-between items-center">
+                  <span className="flex items-center gap-2">
                     Compétences
+                    {!selectedOccupation && (
+                      <Badge variant="outline" className="border-blood-burgundy text-blood-burgundy animate-pulse">
+                        ⚠ Sélectionnez une occupation d'abord
+                      </Badge>
+                    )}
+                  </span>
+                  {selectedOccupation && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-source text-aged-parchment">
                         {manualSkillMode ? "Allocation Manuelle" : "Allocation Automatique"}
@@ -724,9 +782,30 @@ export default function CharacterCreation() {
                         className="data-[state=checked]:bg-aged-gold"
                       />
                     </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {!selectedOccupation ? (
+                  <div className="space-y-4">
+                    <Alert className="bg-cosmic-void border-blood-burgundy">
+                      <AlertCircle className="h-4 w-4 text-blood-burgundy" />
+                      <AlertDescription className="text-aged-parchment">
+                        <strong className="text-bone-white">Étape requise:</strong> Sélectionnez une occupation pour débloquer la répartition des compétences.
+                        <br /><br />
+                        <strong className="text-aged-gold">Points disponibles prévus:</strong>
+                        <br />• Points d'occupation: Calculés selon votre profession
+                        <br />• Points personnels: INT × 2 = {characteristics.intelligence * 2} points
+                        {form.watch('age') && form.watch('age') >= 40 && (
+                          <>
+                            <br />• Bonus d'âge: +{form.watch('age') >= 60 ? 30 : form.watch('age') >= 50 ? 20 : 10} points (expérience)
+                          </>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                ) : (
+                  <>
                   {/* Points Available Display */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-cosmic-void rounded-lg p-4 border border-aged-gold">
@@ -883,9 +962,10 @@ export default function CharacterCreation() {
                       </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Session Selection */}
             {!sessionFromStorage && !sessionIdFromStorage && (
