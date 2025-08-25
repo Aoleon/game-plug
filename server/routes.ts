@@ -564,6 +564,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update inventory item quantity from character path (for GM)
+  app.patch('/api/characters/:characterId/inventory/:itemId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { characterId, itemId } = req.params;
+      const { quantity } = req.body;
+      
+      // Check if user is GM
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      const session = await storage.getGameSession(character.sessionId);
+      const isGM = session && session.gmId === userId;
+      const isOwner = character.userId === userId;
+      
+      if (!isOwner && !isGM) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      const updatedItem = await storage.updateInventoryItem(itemId, { quantity });
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating inventory quantity:", error);
+      res.status(500).json({ message: "Failed to update quantity" });
+    }
+  });
+  
+  // Delete inventory item from character path (for GM)
+  app.delete('/api/characters/:characterId/inventory/:itemId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { characterId, itemId } = req.params;
+      
+      // Check if user is GM
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      const session = await storage.getGameSession(character.sessionId);
+      const isGM = session && session.gmId === userId;
+      const isOwner = character.userId === userId;
+      
+      if (!isOwner && !isGM) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      await storage.deleteInventoryItem(itemId);
+      res.json({ message: "Item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting inventory item:", error);
+      res.status(500).json({ message: "Failed to delete item" });
+    }
+  });
+
   // Simple avatar generation without character ID requirement
   app.post('/api/generate-avatar', isAuthenticated, async (req, res) => {
     try {

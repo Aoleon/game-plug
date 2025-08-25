@@ -21,7 +21,7 @@ import {
   Dice6, Music, BookOpen, Image, Trash2, Plus
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-import CharacterInventoryDisplay from "@/components/character-inventory-display";
+import CharacterInventoryManager from "@/components/character-inventory-manager";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import NarrativeTools from "@/components/narrative-tools";
@@ -450,7 +450,7 @@ export default function GMDashboardSimplified() {
             </DialogTitle>
           </DialogHeader>
           {selectedCharacterForInventory && (
-            <CharacterInventoryDisplay
+            <CharacterInventoryManager
               characterId={selectedCharacterForInventory}
               isGM={true}
             />

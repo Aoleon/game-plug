@@ -158,7 +158,7 @@ export default function EnhancedCharacterCard({
         </div>
 
         {/* Vital Stats Bar */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-5 gap-1 mb-3">
           <div className="text-center bg-cosmic-void rounded p-2 border border-aged-gold/30">
             <div className={cn(
               "text-sm font-bold",
@@ -188,6 +188,12 @@ export default function EnhancedCharacterCard({
               {character.luck}
             </div>
             <div className="text-xs text-aged-parchment">CHA</div>
+          </div>
+          <div className="text-center bg-cosmic-void rounded p-2 border border-aged-gold/30">
+            <div className="text-sm font-bold text-yellow-600">
+              ${typeof character.money === 'string' ? parseFloat(character.money).toFixed(0) : (character.money || 0).toFixed(0)}
+            </div>
+            <div className="text-xs text-aged-parchment">$</div>
           </div>
         </div>
 
