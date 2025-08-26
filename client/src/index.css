@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  /* Lovecraftian color palette */
+  /* Enhanced Lovecraftian color palette */
   --cosmic-void: hsl(0, 0%, 6.7%);
   --deep-black: hsl(0, 0%, 3.9%);
   --blood-burgundy: hsl(0, 100%, 27.3%);
@@ -16,6 +16,15 @@
   --aged-parchment: hsl(45, 37.5%, 86.3%);
   --charcoal: hsl(0, 0%, 10.9%);
   --dark-stone: hsl(0, 0%, 17.3%);
+  
+  /* Additional accent colors */
+  --mystic-purple: hsl(280, 39.5%, 25.1%);
+  --shadow-blue: hsl(220, 20%, 15%);
+  --ember-orange: hsl(15, 85%, 45%);
+  --ghost-silver: hsl(210, 15%, 85%);
+  --void-gradient: linear-gradient(135deg, var(--deep-black) 0%, var(--cosmic-void) 25%, var(--shadow-blue) 50%, var(--cosmic-void) 75%, var(--deep-black) 100%);
+  --gold-gradient: linear-gradient(135deg, var(--aged-gold) 0%, var(--ember-orange) 50%, var(--aged-gold) 100%);
+  --crimson-gradient: linear-gradient(135deg, var(--blood-burgundy) 0%, var(--dark-crimson) 100%);
 
   /* Shadcn compatible colors */
   --background: hsl(0, 0%, 3.9%);
@@ -86,27 +95,84 @@
 }
 
 @layer components {
-  /* Gothic border effect */
+  /* Enhanced glassmorphism effects */
+  .glass-card {
+    background: linear-gradient(135deg, rgba(17, 25, 40, 0.75) 0%, rgba(12, 17, 29, 0.9) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(218, 165, 32, 0.125);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 0 1px rgba(218, 165, 32, 0.1);
+  }
+
+  /* Enhanced Gothic border effect */
   .gothic-border {
-    border-image: linear-gradient(45deg, var(--aged-gold), var(--blood-burgundy), var(--aged-gold)) 1;
+    border-image: linear-gradient(45deg, var(--aged-gold), var(--blood-burgundy), var(--mystic-purple), var(--aged-gold)) 1;
     border-width: 2px;
     border-style: solid;
+    position: relative;
+  }
+  
+  .gothic-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    padding: 2px;
+    background: linear-gradient(45deg, var(--aged-gold), var(--blood-burgundy), var(--mystic-purple), var(--aged-gold));
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0.6;
+    animation: borderFlow 3s linear infinite;
   }
 
-  /* Parchment background gradient */
+  /* Enhanced parchment background */
   .parchment-bg {
-    background: linear-gradient(135deg, var(--charcoal) 0%, var(--dark-stone) 50%, var(--charcoal) 100%);
+    background: var(--void-gradient);
+    position: relative;
+  }
+  
+  .parchment-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(139, 0, 0, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(47, 79, 79, 0.1) 0%, transparent 50%);
+    pointer-events: none;
   }
 
-  /* Eldritch glow effect */
+  /* Enhanced eldritch glow */
   .eldritch-glow {
-    box-shadow: 0 0 20px hsl(43, 74.4%, 49.0%, 0.3);
+    box-shadow: 
+      0 0 20px rgba(218, 165, 32, 0.4),
+      0 0 40px rgba(218, 165, 32, 0.2),
+      0 0 80px rgba(218, 165, 32, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+  }
+  
+  .eldritch-glow::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: var(--gold-gradient);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0.1;
+    filter: blur(2px);
   }
 
-  /* Critical sanity animation */
+  /* Enhanced critical sanity animation */
   .sanity-critical {
-    animation: pulse 1s infinite;
-    box-shadow: 0 0 15px hsl(0, 100%, 27.3%, 0.7);
+    animation: sanityPulse 2s ease-in-out infinite;
+    box-shadow: 
+      0 0 15px rgba(139, 0, 0, 0.8),
+      0 0 30px rgba(139, 0, 0, 0.6),
+      0 0 45px rgba(139, 0, 0, 0.4),
+      inset 0 0 20px rgba(139, 0, 0, 0.2);
   }
 
   /* Custom scrollbar */
@@ -175,19 +241,21 @@
   }
 }
 
-/* Keyframe animations */
+/* Enhanced keyframe animations */
 @keyframes fadeIn {
   from { 
     opacity: 0; 
+    transform: translateY(10px) scale(0.95);
   }
   to { 
     opacity: 1; 
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes slideUp {
   from { 
-    transform: translateY(20px); 
+    transform: translateY(30px); 
     opacity: 0; 
   }
   to { 
@@ -199,27 +267,132 @@
 @keyframes diceRoll {
   0% { 
     transform: rotate(0deg) scale(1); 
+    filter: brightness(1);
   }
   25% { 
     transform: rotate(90deg) scale(1.1); 
+    filter: brightness(1.2);
   }
   50% { 
     transform: rotate(180deg) scale(1.2); 
+    filter: brightness(1.4) hue-rotate(45deg);
   }
   75% { 
     transform: rotate(270deg) scale(1.1); 
+    filter: brightness(1.2);
   }
   100% { 
     transform: rotate(360deg) scale(1); 
+    filter: brightness(1);
   }
 }
 
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes sanityPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+    filter: brightness(1.3) saturate(1.5);
+  }
+}
+
+@keyframes borderFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(-1deg);
+  }
+}
+
+@keyframes holographicShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes textGlow {
+  0% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+  100% {
+    text-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor,
+      0 0 40px currentColor;
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-100px);
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
   }
 }
 
@@ -229,37 +402,126 @@
   transition: width 0.3s ease-in-out;
 }
 
-/* Button hover states */
+/* Enhanced button hover states */
 .btn-primary {
-  background: var(--blood-burgundy);
+  background: var(--crimson-gradient);
   color: var(--bone-white);
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
 }
 
 .btn-primary:hover {
-  background: var(--dark-crimson);
-  box-shadow: 0 4px 8px rgba(139, 0, 0, 0.3);
+  background: var(--crimson-gradient);
+  box-shadow: 
+    0 8px 25px rgba(139, 0, 0, 0.4),
+    0 0 20px rgba(139, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background: var(--eldritch-green);
-  color: var(--bone-white);
-  transition: all 0.2s ease-in-out;
+  background: var(--gold-gradient);
+  color: var(--deep-black);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+}
+
+.btn-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.btn-secondary:hover::before {
+  left: 100%;
 }
 
 .btn-secondary:hover {
-  background: hsl(120, 25.0%, 20.1%);
-  box-shadow: 0 4px 8px rgba(47, 79, 47, 0.3);
+  background: var(--gold-gradient);
+  box-shadow: 
+    0 8px 25px rgba(218, 165, 32, 0.4),
+    0 0 20px rgba(218, 165, 32, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) scale(1.02);
 }
 
-/* Card hover effects */
+/* Enhanced card hover effects */
 .card-hover {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--void-gradient);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.card-hover:hover::before {
+  opacity: 0.1;
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(218, 165, 32, 0.2);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(218, 165, 32, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Floating animation for special elements */
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--charcoal) 8%,
+    var(--dark-stone) 18%,
+    var(--charcoal) 33%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* Enhanced focus styles */
+.focus-enhanced:focus-visible {
+  outline: none;
+  box-shadow: 
+    0 0 0 3px var(--aged-gold),
+    0 0 20px rgba(218, 165, 32, 0.4);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
 }
 
 /* Modal backdrop */
@@ -333,4 +595,111 @@
 
 .warning-border {
   border-color: var(--aged-gold);
+}
+
+/* Advanced visual enhancements */
+.neo-morphism {
+  background: linear-gradient(145deg, var(--charcoal), var(--dark-stone));
+  box-shadow: 
+    20px 20px 40px var(--deep-black),
+    -20px -20px 40px var(--cosmic-void),
+    inset 5px 5px 10px rgba(0, 0, 0, 0.2),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.02);
+}
+
+.holographic {
+  background: linear-gradient(
+    45deg,
+    rgba(218, 165, 32, 0.1) 0%,
+    rgba(139, 0, 0, 0.1) 25%,
+    rgba(47, 79, 47, 0.1) 50%,
+    rgba(139, 0, 0, 0.1) 75%,
+    rgba(218, 165, 32, 0.1) 100%
+  );
+  background-size: 400% 400%;
+  animation: holographicShift 8s ease-in-out infinite;
+}
+
+.glow-text {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+  animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+.gradient-border {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--background), var(--background)) padding-box,
+              linear-gradient(45deg, var(--aged-gold), var(--blood-burgundy), var(--mystic-purple)) border-box;
+}
+
+/* Particle effect background */
+.particle-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, rgba(218, 165, 32, 0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(139, 0, 0, 0.3), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(47, 79, 79, 0.3), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(218, 165, 32, 0.3), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(139, 0, 0, 0.3), transparent);
+  background-size: 200px 100px;
+  animation: particleFloat 20s linear infinite;
+  pointer-events: none;
+}
+
+/* Mystical orb effect */
+.mystical-orb {
+  position: relative;
+}
+
+.mystical-orb::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, var(--aged-gold) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: orbPulse 3s ease-in-out infinite;
+}
+
+/* Glass reflection effect */
+.glass-reflection {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-reflection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  transition: left 0.6s ease;
+}
+
+.glass-reflection:hover::after {
+  left: 100%;
 }

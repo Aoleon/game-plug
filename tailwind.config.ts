@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Lovecraftian color palette
+        // Enhanced Lovecraftian color palette
         'cosmic-void': 'hsl(0, 0%, 6.7%)',
         'deep-black': 'hsl(0, 0%, 3.9%)',
         'blood-burgundy': 'hsl(0, 100%, 27.3%)',
@@ -17,6 +17,12 @@ export default {
         'aged-parchment': 'hsl(45, 37.5%, 86.3%)',
         'charcoal': 'hsl(0, 0%, 10.9%)',
         'dark-stone': 'hsl(0, 0%, 17.3%)',
+        
+        // Additional mystic colors
+        'mystic-purple': 'hsl(280, 39.5%, 25.1%)',
+        'shadow-blue': 'hsl(220, 20%, 15%)',
+        'ember-orange': 'hsl(15, 85%, 45%)',
+        'ghost-silver': 'hsl(210, 15%, 85%)',
 
         // Shadcn UI compatible colors
         background: "var(--background)",

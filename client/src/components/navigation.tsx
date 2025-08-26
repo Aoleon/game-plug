@@ -13,12 +13,12 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="bg-cosmic-void border-b border-aged-gold sticky top-0 z-50">
+      <nav className="bg-cosmic-void border-b border-aged-gold sticky top-0 z-50 glass-card backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <h1 className="font-cinzel text-xl font-bold text-aged-gold hover:text-bone-white transition-colors">
+                <h1 className="font-cinzel text-xl font-bold text-aged-gold hover:text-bone-white transition-all duration-300 glow-text hover:scale-105">
                   Rôle Plug
                 </h1>
               </Link>
@@ -69,7 +69,7 @@ export default function Navigation() {
                   <div className="hidden md:flex items-center space-x-2 text-sm">
                     <span className="text-aged-parchment">Connecté:</span>
                     <span className="text-bone-white">
-                      {user.firstName} {user.lastName}
+                      {user.email || 'Utilisateur'}
                     </span>
                   </div>
                   
