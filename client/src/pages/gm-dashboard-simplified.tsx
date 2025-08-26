@@ -9,10 +9,15 @@ import ConnectionIndicator from "@/components/connection-indicator";
 import EnhancedCharacterCard from "@/components/enhanced-character-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import CharacterCardSkeleton from "@/components/character-card-skeleton";
+import EnhancedButton from "@/components/enhanced-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollDice } from "@/lib/dice";
 import { useDiceSound } from "@/components/dice-sound-manager";
@@ -144,10 +149,30 @@ export default function GMDashboardSimplified() {
     }
   };
 
-  if (isLoadingSession || isLoadingCharacters) {
+  if (isLoadingSession) {
     return (
-      <div className="min-h-screen bg-deep-black flex items-center justify-center">
-        <div className="text-aged-gold font-cinzel text-2xl">Chargement...</div>
+      <div className="min-h-screen bg-deep-black">
+        <Navigation />
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-10" />
+              <Skeleton className="h-9 w-10" />
+              <Skeleton className="h-9 w-10" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CharacterCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -177,42 +202,39 @@ export default function GMDashboardSimplified() {
           
           {/* Quick Actions Bar */}
           <div className="flex items-center gap-2">
-            <Button
+            <EnhancedButton
               size="sm"
               variant="outline"
               onClick={handleCopyCode}
               className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
+              icon={<Copy className="h-4 w-4" />}
+            />
+            <EnhancedButton
               size="sm"
               variant="outline"
               onClick={handleCopyLink}
               className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button
+              icon={<Share2 className="h-4 w-4" />}
+            />
+            <EnhancedButton
               size="sm"
               variant="outline"
               onClick={() => setShowQRDialog(true)}
               className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
-            >
-              <QrCode className="h-4 w-4" />
-            </Button>
+              icon={<QrCode className="h-4 w-4" />}
+            />
             
             {/* GameBoard Button */}
-            <Button
+            <EnhancedButton
               size="sm"
               variant="outline"
               onClick={() => window.open(`/gm/${sessionId}/gameboard`, '_blank')}
               className="border-eldritch-green text-eldritch-green hover:bg-eldritch-green hover:text-deep-black"
               data-testid="button-gameboard"
+              icon={<Monitor className="h-4 w-4" />}
             >
-              <Monitor className="h-4 w-4 mr-1" />
               GameBoard
-            </Button>
+            </EnhancedButton>
             
             {/* Tools Popover */}
             <Popover>
@@ -309,28 +331,66 @@ export default function GMDashboardSimplified() {
         </div>
 
         {/* Character Cards Grid */}
-        {characters.length === 0 ? (
-          <Card className="bg-charcoal border-aged-gold parchment-bg">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Users className="h-16 w-16 text-aged-gold mb-4" />
-              <p className="text-aged-parchment text-center mb-4">
-                Aucun personnage dans cette session.
-              </p>
-              <Button
-                onClick={() => setLocation(`/character-creation/${sessionId}`)}
-                className="bg-eldritch-green hover:bg-green-700 text-bone-white"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Créer un Personnage
-              </Button>
-            </CardContent>
-          </Card>
+        {isLoadingCharacters ? (
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <CharacterCardSkeleton key={`skeleton-${i}`} />
+            ))}
+          </div>
+        ) : characters.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-charcoal border-aged-gold parchment-bg">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Users className="h-16 w-16 text-aged-gold mb-4" />
+                </motion.div>
+                <motion.p
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-aged-parchment text-center mb-4"
+                >
+                  Aucun personnage dans cette session.
+                </motion.p>
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <EnhancedButton
+                    onClick={() => setLocation(`/character-creation/${sessionId}`)}
+                    className="bg-eldritch-green hover:bg-green-700 text-bone-white"
+                    icon={<Plus className="h-4 w-4" />}
+                  >
+                    Créer un Personnage
+                  </EnhancedButton>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {characters.map((character) => (
-              <EnhancedCharacterCard
+            {characters.map((character, index) => (
+              <motion.div
                 key={character.id}
-                character={character}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: index * 0.1,
+                  ease: "easeOut"
+                }}
+              >
+                <EnhancedCharacterCard
+                  character={character}
                 isConnected={isConnected}
                 onEdit={() => setLocation(`/character-edit/${sessionId}/${character.id}`)}
                 onDelete={() => {
@@ -424,6 +484,7 @@ export default function GMDashboardSimplified() {
                   });
                 }}
               />
+              </motion.div>
             ))}
           </div>
         )}
@@ -499,5 +560,3 @@ export default function GMDashboardSimplified() {
   );
 }
 
-// Missing import for Badge
-import { Badge } from "@/components/ui/badge";
