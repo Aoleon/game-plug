@@ -63,3 +63,166 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first CSS framework with custom design tokens
 - **Lucide Icons**: Consistent icon library for UI elements
 - **Class Variance Authority**: Type-safe variant management for component styling
+
+# Testing & Validation Framework
+
+## Testing Philosophy
+Every feature addition or update requires comprehensive testing across all application layers to ensure robustness, performance, and user experience integrity. Testing follows a systematic approach covering backend API endpoints, frontend components, real-time features, and user interface interactions.
+
+## Testing Tools & Infrastructure
+
+### Development Environment Testing
+- **LSP Diagnostics**: TypeScript error checking with `get_latest_lsp_diagnostics` for compile-time validation
+- **Workflow Management**: Server restart validation with `restart_workflow` to ensure changes are properly applied
+- **Hot Module Replacement**: Vite HMR monitoring for frontend development cycle validation
+
+### Backend API Testing
+- **Route Validation**: Manual API endpoint testing for all CRUD operations
+- **Authentication Testing**: Session-based auth validation for protected routes
+- **WebSocket Testing**: Real-time connection and message broadcasting validation
+- **Database Operations**: Drizzle ORM query validation and data integrity checks
+
+### Frontend Component Testing
+- **Component Integration**: Visual and functional testing of React components
+- **State Management**: TanStack Query cache validation and data flow testing
+- **Form Validation**: React Hook Form with Zod schema testing for all user inputs
+- **Responsive Design**: Multi-device layout and interaction testing
+
+### UI/UX Validation
+- **Accessibility Testing**: Radix UI primitive compliance and keyboard navigation
+- **Visual Consistency**: Lovecraftian theme integrity and typography validation
+- **Interactive Elements**: Button states, hover effects, and loading states testing
+- **Error States**: User-friendly error handling and feedback validation
+
+## Testing Procedures by Component
+
+### Backend Testing Checklist
+1. **API Endpoints**
+   - Route accessibility and HTTP status codes
+   - Request/response data structure validation
+   - Authentication and authorization checks
+   - Error handling and edge cases
+   - Database transaction integrity
+
+2. **WebSocket Features**
+   - Connection establishment and persistence
+   - Message broadcasting to correct recipients
+   - Real-time state synchronization
+   - Reconnection handling and failover
+
+3. **Database Operations**
+   - CRUD operations for all entities
+   - Foreign key relationships integrity
+   - Migration scripts execution
+   - Data persistence and retrieval accuracy
+
+### Frontend Testing Checklist
+1. **Component Functionality**
+   - Props handling and state management
+   - Event handlers and user interactions
+   - Conditional rendering and dynamic content
+   - Component lifecycle and cleanup
+
+2. **User Interface**
+   - Visual consistency across pages
+   - Responsive design on different screen sizes
+   - Loading states and skeleton screens
+   - Error boundaries and graceful degradation
+
+3. **User Experience**
+   - Intuitive navigation and workflow
+   - Form validation and feedback
+   - Real-time updates and notifications
+   - Performance and loading times
+
+### Game Logic Testing
+1. **Character Management**
+   - Character creation with correct stat calculations
+   - Skill point distribution and validation
+   - Inventory management and item interactions
+   - Money handling and transaction accuracy
+
+2. **Dice Rolling System**
+   - Probability distribution validation
+   - Critical success/failure detection
+   - Sound effects and visual feedback
+   - Roll history and logging
+
+3. **Session Management**
+   - GM dashboard functionality
+   - Player invitation and joining
+   - Real-time session synchronization
+   - Session persistence and recovery
+
+## Validation Standards
+
+### Performance Criteria
+- **Page Load Time**: < 3 seconds for initial load
+- **API Response Time**: < 500ms for standard operations
+- **WebSocket Latency**: < 100ms for real-time updates
+- **Memory Usage**: Efficient cleanup and garbage collection
+
+### User Experience Standards
+- **Accessibility**: WCAG 2.1 AA compliance
+- **Mobile Responsiveness**: Full functionality on devices ≥ 320px width
+- **Browser Compatibility**: Chrome, Firefox, Safari, Edge latest versions
+- **Error Recovery**: Clear error messages and recovery paths
+
+### Code Quality Standards
+- **TypeScript Coverage**: 100% type safety with strict mode
+- **Component Reusability**: DRY principles and modular architecture
+- **Security**: Input validation, XSS prevention, secure authentication
+- **Documentation**: Inline comments for complex logic and API documentation
+
+## Continuous Testing Protocol
+
+### Pre-Deployment Checklist
+1. **Compile-time Validation**
+   - TypeScript errors resolved (LSP diagnostics clear)
+   - Build process completes without warnings
+   - Import/export consistency verified
+
+2. **Runtime Validation**
+   - Server starts successfully with all routes registered
+   - Database connections established and migrations applied
+   - WebSocket server operational and accepting connections
+
+3. **Feature Integration Testing**
+   - New functionality works in isolation
+   - Integration with existing features validated
+   - No regression in previously working features
+   - Cross-browser compatibility verified
+
+4. **User Acceptance Testing**
+   - Complete user workflow testing
+   - Error scenarios and edge cases covered
+   - Performance benchmarks met
+   - Security vulnerabilities assessed
+
+### Post-Deployment Monitoring
+- **Error Logging**: Console error monitoring and resolution
+- **Performance Metrics**: Load time and response time tracking
+- **User Feedback**: Interface usability and bug reports
+- **System Health**: Database performance and connection stability
+
+## Recent Updates & Testing Status
+
+### Latest Features Tested (January 2025)
+1. **Enhanced GM Dashboard**: Character-centric interface with integrated actions
+2. **Inventory Management**: Complete item catalog with quantity controls and money management
+3. **Skill Points System**: GM allocation and player distribution with validation
+4. **Enhanced Character Cards**: Expandable interface with all major actions integrated
+
+### Current Test Coverage
+- ✅ Backend API routes (character, inventory, session management)
+- ✅ Frontend component integration (cards, modals, forms)
+- ✅ Real-time WebSocket functionality
+- ✅ Database operations and data integrity
+- ✅ User interface responsiveness and accessibility
+- ✅ Game logic implementation (dice rolling, sanity tracking)
+
+### Known Testing Gaps
+- Automated test suite implementation pending
+- Load testing under concurrent user scenarios
+- Mobile device specific testing expansion needed
+- Integration testing with external AI services

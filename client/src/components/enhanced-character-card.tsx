@@ -103,6 +103,7 @@ export default function EnhancedCharacterCard({
                 src={character.avatarUrl} 
                 alt={character.name}
                 className="w-14 h-14 rounded-full border-2 border-aged-gold object-cover"
+                data-testid={`img-character-avatar-${character.id}`}
               />
             ) : (
               <div className="w-14 h-14 rounded-full border-2 border-aged-gold bg-cosmic-void flex items-center justify-center">
@@ -110,11 +111,11 @@ export default function EnhancedCharacterCard({
               </div>
             )}
             <div>
-              <h3 className="font-cinzel text-lg text-aged-gold flex items-center gap-2">
+              <h3 className="font-cinzel text-lg text-aged-gold flex items-center gap-2" data-testid={`text-character-name-${character.id}`}>
                 {character.name}
                 {isCriticalCondition && <Skull className="h-4 w-4 text-blood-burgundy animate-pulse" />}
               </h3>
-              <p className="text-sm text-aged-parchment">{character.occupation}</p>
+              <p className="text-sm text-aged-parchment" data-testid={`text-character-occupation-${character.id}`}>{character.occupation}</p>
             </div>
           </div>
           
@@ -206,6 +207,7 @@ export default function EnhancedCharacterCard({
               value={quickDamage}
               onChange={(e) => setQuickDamage(e.target.value)}
               className="h-8 text-xs bg-cosmic-void border-blood-burgundy/50"
+              data-testid={`input-quick-damage-${character.id}`}
             />
             <Button
               size="sm"
@@ -219,6 +221,7 @@ export default function EnhancedCharacterCard({
                 }
               }}
               className="h-8 px-2 bg-blood-burgundy hover:bg-dark-crimson"
+              data-testid={`button-apply-damage-${character.id}`}
             >
               <TrendingDown className="h-3 w-3" />
             </Button>
@@ -231,6 +234,7 @@ export default function EnhancedCharacterCard({
               value={quickSanity}
               onChange={(e) => setQuickSanity(e.target.value)}
               className="h-8 text-xs bg-cosmic-void border-purple-600/50"
+              data-testid={`input-quick-sanity-${character.id}`}
             />
             <Button
               size="sm"
@@ -286,6 +290,7 @@ export default function EnhancedCharacterCard({
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full h-6 text-xs text-aged-parchment hover:text-aged-gold"
+          data-testid={`button-expand-character-${character.id}`}
         >
           {isExpanded ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
           {isExpanded ? "Réduire" : "Détails & Actions"}
