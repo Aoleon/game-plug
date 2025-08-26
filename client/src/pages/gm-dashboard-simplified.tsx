@@ -18,7 +18,7 @@ import { rollDice } from "@/lib/dice";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Users, Copy, QrCode, Share2, Settings, Package,
-  Dice6, Music, BookOpen, Image, Trash2, Plus
+  Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import CharacterInventoryManager from "@/components/character-inventory-manager";
@@ -200,6 +200,18 @@ export default function GMDashboardSimplified() {
               className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
             >
               <QrCode className="h-4 w-4" />
+            </Button>
+            
+            {/* GameBoard Button */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open(`/gm/${sessionId}/gameboard`, '_blank')}
+              className="border-eldritch-green text-eldritch-green hover:bg-eldritch-green hover:text-deep-black"
+              data-testid="button-gameboard"
+            >
+              <Monitor className="h-4 w-4 mr-1" />
+              GameBoard
             </Button>
             
             {/* Tools Popover */}

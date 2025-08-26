@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription } from "./openai";
+import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage } from "./openai";
 import { migrateExistingAvatars } from "./migrate-avatars";
 import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
 import { applyHealing, applySanityRecovery, applyMagicRecovery, applyLuckBoost, applySkillBonus } from "./buff-logic";
@@ -618,6 +618,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting inventory item:", error);
       res.status(500).json({ message: "Failed to delete item" });
+    }
+  });
+
+  // GameBoard scene generation endpoint
+  app.post('/api/gameboard/generate-scene', isAuthenticated, async (req: any, res) => {
+    try {
+      const { prompt, sessionId } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      // Verify GM access to session
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== req.user.claims.sub) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+
+      const { url } = await generateSceneImage(prompt);
+      res.json({ imageUrl: url });
+    } catch (error) {
+      console.error("Error generating scene:", error);
+      res.status(500).json({ message: "Failed to generate scene" });
     }
   });
 

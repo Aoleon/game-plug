@@ -146,6 +146,14 @@ function handleMessage(ws: ExtendedWebSocket, message: WSMessage, wss: WebSocket
       });
       break;
       
+    case 'projection_update':
+      broadcastToSession(ws.sessionId, {
+        type: 'projection_update',
+        data: message.data,
+        timestamp: new Date()
+      }, ws);
+      break;
+      
     case 'ping':
       ws.send(JSON.stringify({ type: 'pong', timestamp: new Date() }));
       break;

@@ -11,6 +11,7 @@ import CharacterCreation from "@/pages/character-creation";
 import CharacterSheet from "@/pages/character-sheet";
 import CharacterEdit from "@/pages/character-edit";
 import GMDashboardSimplified from "@/pages/gm-dashboard-simplified";
+import GameBoard from "@/pages/gameboard";
 import SessionManager from "@/pages/session-manager";
 import JoinSession from "@/pages/join-session";
 import SelectCharacter from "@/pages/select-character";
@@ -35,6 +36,7 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/gm/:sessionId" component={GMDashboardSimplified} />
+          <Route path="/gm/:sessionId/gameboard" component={GameBoard} />
           <Route path="/character-creation/:sessionId" component={CharacterCreation} />
           <Route path="/character-edit/:sessionId/:id" component={CharacterEdit} />
           <Route path="/sessions" component={SessionManager} />
