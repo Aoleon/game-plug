@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { 
@@ -288,37 +289,84 @@ export default function GameBoard() {
                           )}
                         </div>
 
-                        {/* Vital Stats */}
-                        <div className="grid grid-cols-4 gap-1 mb-2">
-                          <div className="text-center bg-cosmic-void/50 rounded p-1">
-                            <div className={cn(
-                              "text-xs font-bold",
-                              character.hitPoints <= character.maxHitPoints * 0.3 ? "text-blood-burgundy" : "text-bone-white"
-                            )}>
-                              {character.hitPoints}/{character.maxHitPoints}
+                        {/* Vital Stats with Gauges */}
+                        <div className="space-y-2 mb-3">
+                          {/* Health Points */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <Heart className="h-3 w-3 text-blood-burgundy" />
+                                <span className="text-xs text-aged-parchment font-medium">PV</span>
+                              </div>
+                              <span className="text-xs font-bold text-bone-white">
+                                {character.hitPoints}/{character.maxHitPoints}
+                              </span>
                             </div>
-                            <div className="text-xs text-aged-parchment">PV</div>
+                            <Progress 
+                              value={(character.hitPoints / character.maxHitPoints) * 100}
+                              className={cn(
+                                "h-2 border border-aged-gold/30",
+                                "[&>[role=progressbar]]:bg-gradient-to-r",
+                                character.hitPoints <= character.maxHitPoints * 0.3 
+                                  ? "[&>[role=progressbar]]:from-blood-burgundy [&>[role=progressbar]]:to-red-700"
+                                  : character.hitPoints <= character.maxHitPoints * 0.6
+                                  ? "[&>[role=progressbar]]:from-yellow-600 [&>[role=progressbar]]:to-orange-600" 
+                                  : "[&>[role=progressbar]]:from-eldritch-green [&>[role=progressbar]]:to-green-600"
+                              )}
+                            />
                           </div>
-                          <div className="text-center bg-cosmic-void/50 rounded p-1">
-                            <div className={cn(
-                              "text-xs font-bold",
-                              character.sanity <= character.maxSanity * 0.3 ? "text-purple-400" : "text-bone-white"
-                            )}>
-                              {character.sanity}/{character.maxSanity}
+
+                          {/* Sanity */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <Brain className="h-3 w-3 text-purple-400" />
+                                <span className="text-xs text-aged-parchment font-medium">SAN</span>
+                              </div>
+                              <span className="text-xs font-bold text-bone-white">
+                                {character.sanity}/{character.maxSanity}
+                              </span>
                             </div>
-                            <div className="text-xs text-aged-parchment">SAN</div>
+                            <Progress 
+                              value={(character.sanity / character.maxSanity) * 100}
+                              className={cn(
+                                "h-2 border border-aged-gold/30",
+                                "[&>[role=progressbar]]:bg-gradient-to-r",
+                                character.sanity <= character.maxSanity * 0.3 
+                                  ? "[&>[role=progressbar]]:from-purple-700 [&>[role=progressbar]]:to-purple-900 animate-pulse"
+                                  : character.sanity <= character.maxSanity * 0.6
+                                  ? "[&>[role=progressbar]]:from-purple-500 [&>[role=progressbar]]:to-purple-700"
+                                  : "[&>[role=progressbar]]:from-blue-400 [&>[role=progressbar]]:to-purple-500"
+                              )}
+                            />
                           </div>
-                          <div className="text-center bg-cosmic-void/50 rounded p-1">
-                            <div className="text-xs font-bold text-bone-white">
-                              {character.magicPoints}/{character.maxMagicPoints}
+
+                          {/* Magic Points */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1">
+                                <Sparkles className="h-3 w-3 text-cyan-400" />
+                                <span className="text-xs text-aged-parchment font-medium">PM</span>
+                              </div>
+                              <span className="text-xs font-bold text-bone-white">
+                                {character.magicPoints}/{character.maxMagicPoints}
+                              </span>
                             </div>
-                            <div className="text-xs text-aged-parchment">PM</div>
+                            <Progress 
+                              value={(character.magicPoints / character.maxMagicPoints) * 100}
+                              className="h-2 border border-aged-gold/30 [&>[role=progressbar]]:bg-gradient-to-r [&>[role=progressbar]]:from-cyan-400 [&>[role=progressbar]]:to-blue-500"
+                            />
                           </div>
-                          <div className="text-center bg-cosmic-void/50 rounded p-1">
-                            <div className="text-xs font-bold text-yellow-600">
+
+                          {/* Money (different display) */}
+                          <div className="flex items-center justify-between bg-cosmic-void/30 rounded p-1">
+                            <div className="flex items-center gap-1">
+                              <Coins className="h-3 w-3 text-yellow-500" />
+                              <span className="text-xs text-aged-parchment font-medium">Argent</span>
+                            </div>
+                            <span className="text-xs font-bold text-yellow-500">
                               ${typeof character.money === 'string' ? parseFloat(character.money).toFixed(0) : (character.money || 0).toFixed(0)}
-                            </div>
-                            <div className="text-xs text-aged-parchment">$</div>
+                            </span>
                           </div>
                         </div>
 
