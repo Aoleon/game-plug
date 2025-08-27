@@ -64,6 +64,11 @@ export default function CharacterCard({ character }: CharacterCardProps) {
               <div 
                 className="bg-red-500 h-1 rounded-full transition-all duration-300"
                 style={{ width: `${hpPercentage}%` }}
+                role="progressbar"
+                aria-valuenow={character.hitPoints}
+                aria-valuemin={0}
+                aria-valuemax={character.maxHitPoints}
+                aria-label={`Points de vie: ${character.hitPoints} sur ${character.maxHitPoints}`}
               />
             </div>
           </div>
@@ -83,6 +88,11 @@ export default function CharacterCard({ character }: CharacterCardProps) {
                   sanityPercentage < 50 ? 'bg-yellow-500' : 'bg-eldritch-green'
                 }`}
                 style={{ width: `${sanityPercentage}%` }}
+                role="progressbar"
+                aria-valuenow={character.sanity}
+                aria-valuemin={0}
+                aria-valuemax={character.maxSanity}
+                aria-label={`Sanité mentale: ${character.sanity} sur ${character.maxSanity} (${sanityStatus.text})`}
               />
             </div>
           </div>
@@ -99,6 +109,11 @@ export default function CharacterCard({ character }: CharacterCardProps) {
               <div 
                 className="bg-blue-400 h-1 rounded-full transition-all duration-300"
                 style={{ width: `${(character.magicPoints / character.maxMagicPoints) * 100}%` }}
+                role="progressbar"
+                aria-valuenow={character.magicPoints}
+                aria-valuemin={0}
+                aria-valuemax={character.maxMagicPoints}
+                aria-label={`Points de magie: ${character.magicPoints} sur ${character.maxMagicPoints}`}
               />
             </div>
           </div>

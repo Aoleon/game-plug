@@ -106,6 +106,7 @@ export default function EnhancedToast({
               setTimeout(() => onClose?.(), 300);
             }}
             className="text-current opacity-50 hover:opacity-100 transition-opacity"
+            aria-label="Fermer la notification"
           >
             <X className="h-4 w-4" />
           </motion.button>

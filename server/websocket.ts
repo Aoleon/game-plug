@@ -8,9 +8,48 @@ interface ExtendedWebSocket extends WebSocket {
   isAlive?: boolean;
 }
 
+// Define specific data types for different message types
+interface JoinSessionData {
+  sessionId: string;
+  userId: string;
+}
+
+interface RollData {
+  rollType: string;
+  result: number;
+  skillName?: string;
+  characterId?: string;
+  success?: string;
+  diceFormula: string;
+}
+
+interface EffectData {
+  characterId: string;
+  effectType: string;
+  value: string | number;
+  duration?: number;
+}
+
+interface ProjectionData {
+  imageUrl?: string;
+  description?: string;
+  isActive: boolean;
+}
+
+interface NarrationData {
+  text: string;
+  isPublic: boolean;
+}
+
+interface AmbianceData {
+  type: string;
+  isActive: boolean;
+}
+
+// Base message interface with typed data
 interface WSMessage {
   type: string;
-  data: any;
+  data?: JoinSessionData | RollData | EffectData | ProjectionData | NarrationData | AmbianceData | { userId?: string } | string;
   timestamp?: Date;
 }
 
@@ -163,7 +202,7 @@ function handleMessage(ws: ExtendedWebSocket, message: WSMessage, wss: WebSocket
   }
 }
 
-function handleJoinSession(ws: ExtendedWebSocket, data: { sessionId: string; userId: string }) {
+function handleJoinSession(ws: ExtendedWebSocket, data: JoinSessionData) {
   ws.sessionId = data.sessionId;
   ws.userId = data.userId;
   
