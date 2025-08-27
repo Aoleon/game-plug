@@ -14,6 +14,7 @@ import {
   insertActiveEffectSchema,
   insertRollHistorySchema,
   insertChapterSchema,
+  insertInventorySchema,
 } from "@shared/schema";
 import { z } from "zod";
 

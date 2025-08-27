@@ -28,6 +28,7 @@ export default function ConnectionIndicator({ isConnected, className }: Connecti
             <Wifi className="h-4 w-4" />
             <span>Connecté</span>
             <motion.div
+              key="pulse-indicator"
               className="h-2 w-2 bg-green-500 rounded-full"
               animate={{ opacity: [1, 0.5, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}

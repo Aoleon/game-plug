@@ -8,6 +8,24 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Define proper TypeScript interfaces for user and claims
+interface Claims {
+  sub?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image_url?: string;
+  exp?: number;
+  [key: string]: any;
+}
+
+interface AuthenticatedUser {
+  claims: Claims;
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: number;
+}
+
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
@@ -45,24 +63,24 @@ export function getSession() {
 }
 
 function updateUserSession(
-  user: any,
+  user: AuthenticatedUser,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
 ) {
-  user.claims = tokens.claims();
+  user.claims = tokens.claims() as unknown as Claims;
   user.access_token = tokens.access_token;
   user.refresh_token = tokens.refresh_token;
   user.expires_at = user.claims?.exp;
 }
 
 async function upsertUser(
-  claims: any,
+  claims: Claims,
 ) {
   await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
+    id: claims.sub || '',
+    email: claims.email || '',
+    firstName: claims.first_name || '',
+    lastName: claims.last_name || '',
+    profileImageUrl: claims.profile_image_url || '',
   });
 }
 
@@ -78,9 +96,14 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
+    const user: AuthenticatedUser = {
+      claims: tokens.claims() as unknown as Claims,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: undefined
+    };
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    await upsertUser(tokens.claims() as unknown as Claims);
     verified(null, user);
   };
 
@@ -131,9 +154,9 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
+  const user = req.user as AuthenticatedUser;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
