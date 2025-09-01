@@ -112,12 +112,14 @@ export async function setupAuth(app: Express) {
   domains.push("localhost", "localhost:5000");
   
   for (const domain of domains) {
+    // Use http for localhost in development, https for production
+    const protocol = domain.includes('localhost') ? 'http' : 'https';
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
         config,
         scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
+        callbackURL: `${protocol}://${domain}/api/callback`,
       },
       verify,
     );
@@ -128,14 +130,16 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    const host = req.get('host') || req.hostname;
+    passport.authenticate(`replitauth:${host}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    const host = req.get('host') || req.hostname;
+    passport.authenticate(`replitauth:${host}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
