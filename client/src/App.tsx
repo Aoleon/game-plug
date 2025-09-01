@@ -22,6 +22,11 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Router state:', { isAuthenticated, isLoading });
+  }
+
   return (
     <Switch>
       {/* Public routes - always accessible */}
