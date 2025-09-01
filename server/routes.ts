@@ -15,7 +15,10 @@ import {
   insertRollHistorySchema,
   insertChapterSchema,
   insertInventorySchema,
+  gmSignupSchema,
+  localLoginSchema,
 } from "@shared/schema";
+import { AuthService } from "./auth-service";
 import { z } from "zod";
 
 // Generate a unique session code
@@ -40,12 +43,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.claims ? req.user.claims.sub : req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Local GM signup route
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const signupData = gmSignupSchema.parse(req.body);
+      const user = await AuthService.signupGM(signupData);
+      
+      // Create session for the new user
+      (req.session as any).user = {
+        id: user.id,
+        email: user.email,
+        authType: 'local'
+      };
+      
+      res.status(201).json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isGM: user.isGM,
+          authType: user.authType
+        }
+      });
+    } catch (error) {
+      console.error("Error during signup:", error);
+      const message = error instanceof Error ? error.message : "Erreur lors de l'inscription";
+      res.status(400).json({ message });
+    }
+  });
+
+  // Local login route
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const loginData = localLoginSchema.parse(req.body);
+      const user = await AuthService.authenticateLocal(loginData);
+      
+      // Create session for the authenticated user
+      (req.session as any).user = {
+        id: user.id,
+        email: user.email,
+        authType: 'local'
+      };
+      
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isGM: user.isGM,
+          authType: user.authType
+        }
+      });
+    } catch (error) {
+      console.error("Error during login:", error);
+      const message = error instanceof Error ? error.message : "Erreur lors de la connexion";
+      res.status(401).json({ message });
     }
   });
 

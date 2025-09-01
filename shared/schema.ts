@@ -25,13 +25,17 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table (supports both Replit Auth and local auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  // Local authentication fields
+  passwordHash: varchar("password_hash"), // For local GM accounts
+  authType: varchar("auth_type").default('replit'), // 'replit' or 'local'
+  isGM: boolean("is_gm").default(false), // Flag to identify GMs
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -333,6 +337,20 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+// Local signup schema for GMs
+export const gmSignupSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+});
+
+// Local login schema
+export const localLoginSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
 });
 
 // Types

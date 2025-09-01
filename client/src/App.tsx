@@ -15,6 +15,8 @@ import GameBoard from "@/pages/gameboard";
 import SessionManager from "@/pages/session-manager";
 import JoinSession from "@/pages/join-session";
 import SelectCharacter from "@/pages/select-character";
+import GMSignup from "@/pages/gm-signup";
+import GMLogin from "@/pages/gm-login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +26,8 @@ function Router() {
     <Switch>
       {/* Public routes - always accessible */}
       <Route path="/join" component={JoinSession} />
+      <Route path="/gm-signup" component={GMSignup} />
+      <Route path="/gm-login" component={GMLogin} />
       <Route path="/session/:sessionId/select-character" component={SelectCharacter} />
       <Route path="/character/:id" component={CharacterSheet} />
       <Route path="/create-character" component={CharacterCreation} />

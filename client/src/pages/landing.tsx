@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Users, Dice6, Brain } from "lucide-react";
+import { Eye, Users, Dice6, Brain, UserPlus, LogIn } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, navigate] = useLocation();
+
   return (
     <div className="min-h-screen bg-deep-black text-bone-white">
       {/* Hero Section */}
@@ -18,23 +21,71 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg"
-              className="bg-blood-burgundy hover:bg-dark-crimson text-bone-white px-8 py-4 text-lg font-source"
-              onClick={() => window.location.href = '/api/login'}
-              data-testid="button-login"
-            >
-              <Eye className="mr-2 h-5 w-5" />
-              Devenir Maître de Jeu
-            </Button>
-            <Button 
-              size="lg"
               variant="outline"
               className="border-aged-gold text-aged-gold hover:bg-aged-gold/10 px-8 py-4 text-lg font-source"
-              onClick={() => window.location.pathname = '/join'}
+              onClick={() => navigate('/join')}
               data-testid="button-join-session"
             >
               <Users className="mr-2 h-5 w-5" />
               Rejoindre une Session
             </Button>
+          </div>
+
+          {/* GM Registration Options */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <h3 className="font-cinzel text-2xl font-bold text-aged-gold text-center mb-6">
+              Espace Maître de Jeu
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Card className="bg-charcoal/50 border-aged-gold backdrop-blur-sm">
+                <CardContent className="p-6 text-center">
+                  <UserPlus className="mx-auto h-8 w-8 text-aged-gold mb-4" />
+                  <h4 className="font-cinzel text-lg text-aged-gold mb-2">Nouveau MJ</h4>
+                  <p className="text-aged-parchment text-sm mb-4 font-source">
+                    Créez votre compte gratuit pour diriger des sessions Call of Cthulhu
+                  </p>
+                  <Button 
+                    className="w-full bg-blood-burgundy hover:bg-dark-crimson text-bone-white font-source"
+                    onClick={() => navigate('/gm-signup')}
+                    data-testid="button-gm-signup"
+                  >
+                    S'inscrire
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-charcoal/50 border-aged-gold backdrop-blur-sm">
+                <CardContent className="p-6 text-center">
+                  <LogIn className="mx-auto h-8 w-8 text-aged-gold mb-4" />
+                  <h4 className="font-cinzel text-lg text-aged-gold mb-2">MJ Existant</h4>
+                  <p className="text-aged-parchment text-sm mb-4 font-source">
+                    Connectez-vous à votre espace de direction de jeu
+                  </p>
+                  <Button 
+                    variant="outline"
+                    className="w-full border-aged-gold text-aged-gold hover:bg-aged-gold/10 font-source"
+                    onClick={() => navigate('/gm-login')}
+                    data-testid="button-gm-login"
+                  >
+                    Se connecter
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-aged-parchment text-sm font-source">
+                Ou{" "}
+                <Button
+                  variant="link"
+                  className="text-aged-gold hover:text-eldritch-green p-0 h-auto font-normal"
+                  onClick={() => window.location.href = '/api/login'}
+                  data-testid="button-replit-login"
+                >
+                  continuer avec votre compte Replit
+                </Button>
+              </p>
+            </div>
           </div>
         </div>
       </div>

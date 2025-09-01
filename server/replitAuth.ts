@@ -142,6 +142,17 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    // Handle local user logout
+    const localUser = (req.session as any)?.user;
+    if (localUser && localUser.authType === 'local') {
+      (req.session as any).user = null;
+      req.session.destroy(() => {
+        res.redirect("/");
+      });
+      return;
+    }
+
+    // Handle Replit auth logout
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
@@ -154,6 +165,19 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // Check for local session first
+  const localUser = (req.session as any)?.user;
+  if (localUser && localUser.authType === 'local') {
+    // Set user data for local auth compatibility
+    req.user = {
+      id: localUser.id,
+      email: localUser.email,
+      authType: 'local'
+    };
+    return next();
+  }
+
+  // Fallback to Replit auth
   const user = req.user as AuthenticatedUser;
 
   if (!req.isAuthenticated() || !user?.expires_at) {
