@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,17 +25,21 @@ import {
   Users, Copy, QrCode, Share2, Settings, Package,
   Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor
 } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
-import CharacterInventoryManager from "@/components/character-inventory-manager";
-import GMRollWithEffects from "@/components/gm-roll-with-effects";
-import UnifiedAmbientController from "@/components/unified-ambient-controller";
-import NarrativeTools from "@/components/narrative-tools";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
   sanityConditions: SanityCondition[];
   activeEffects: ActiveEffect[];
 }
+
+const CharacterInventoryManager = lazy(() => import("@/components/character-inventory-manager"));
+const GMRollWithEffects = lazy(() => import("@/components/gm-roll-with-effects"));
+const UnifiedAmbientController = lazy(() => import("@/components/unified-ambient-controller"));
+const NarrativeTools = lazy(() => import("@/components/narrative-tools"));
+const QRCodeCanvas = lazy(async () => {
+  const mod = await import("qrcode.react");
+  return { default: mod.QRCodeCanvas };
+});
 
 export default function GMDashboardSimplified() {
   const params = useParams();
@@ -252,59 +256,65 @@ export default function GMDashboardSimplified() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-cinzel text-aged-gold mb-2">Jets Groupés</h3>
-                    <GMRollWithEffects
-                      characters={characters}
-                      onRoll={(result) => {
-                        // Handle roll result
-                        if (isConnected) {
-                          sendMessage('gm_roll', {
-                            formula: result.formula,
-                            results: Array.from(result.results.entries()),
-                            isSecret: result.isSecret
-                          });
-                        }
-                      }}
-                      onApplyEffect={async (effect) => {
-                        // Apply effects to characters
-                        for (const charId of effect.characterIds) {
-                          await apiRequest("POST", `/api/characters/${charId}/effects`, {
-                            type: effect.effectType,
-                            value: effect.value.toString(),
-                            description: effect.description
-                          });
-                        }
-                        queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
-                      }}
-                    />
+                    <Suspense fallback={<div className="py-6 text-center text-aged-parchment/70 text-sm">Chargement des jets...</div>}>
+                      <GMRollWithEffects
+                        characters={characters}
+                        onRoll={(result) => {
+                          // Handle roll result
+                          if (isConnected) {
+                            sendMessage('gm_roll', {
+                              formula: result.formula,
+                              results: Array.from(result.results.entries()),
+                              isSecret: result.isSecret
+                            });
+                          }
+                        }}
+                        onApplyEffect={async (effect) => {
+                          // Apply effects to characters
+                          for (const charId of effect.characterIds) {
+                            await apiRequest("POST", `/api/characters/${charId}/effects`, {
+                              type: effect.effectType,
+                              value: effect.value.toString(),
+                              description: effect.description
+                            });
+                          }
+                          queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "characters"] });
+                        }}
+                      />
+                    </Suspense>
                   </div>
                   
                   <div>
                     <h3 className="font-cinzel text-aged-gold mb-2">Ambiance</h3>
-                    <UnifiedAmbientController />
+                    <Suspense fallback={<div className="py-6 text-center text-aged-parchment/70 text-sm">Chargement de l'ambiance...</div>}>
+                      <UnifiedAmbientController />
+                    </Suspense>
                   </div>
                   
                   <div>
                     <h3 className="font-cinzel text-aged-gold mb-2">Narration</h3>
-                    <NarrativeTools
-                      onAmbiance={(text) => {
-                        if (isConnected) {
-                          sendMessage('ambiance', { text, timestamp: new Date() });
-                        }
-                        toast({
-                          title: "Ambiance envoyée",
-                          description: text.substring(0, 50) + '...',
-                        });
-                      }}
-                      onNarration={(text) => {
-                        if (isConnected) {
-                          sendMessage('narration', { text, timestamp: new Date() });
-                        }
-                        toast({
-                          title: "Narration envoyée",
-                          description: text.substring(0, 50) + '...',
-                        });
-                      }}
-                    />
+                    <Suspense fallback={<div className="py-6 text-center text-aged-parchment/70 text-sm">Chargement des outils narratifs...</div>}>
+                      <NarrativeTools
+                        onAmbiance={(text) => {
+                          if (isConnected) {
+                            sendMessage('ambiance', { text, timestamp: new Date() });
+                          }
+                          toast({
+                            title: "Ambiance envoyée",
+                            description: text.substring(0, 50) + '...',
+                          });
+                        }}
+                        onNarration={(text) => {
+                          if (isConnected) {
+                            sendMessage('narration', { text, timestamp: new Date() });
+                          }
+                          toast({
+                            title: "Narration envoyée",
+                            description: text.substring(0, 50) + '...',
+                          });
+                        }}
+                      />
+                    </Suspense>
                   </div>
                   
                   <Button
@@ -488,48 +498,52 @@ export default function GMDashboardSimplified() {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* QR Code Dialog */}
-      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
-        <DialogContent className="bg-charcoal border-aged-gold">
-          <DialogHeader>
-            <DialogTitle className="font-cinzel text-aged-gold">Code QR de la Session</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center space-y-4 p-4">
-            <QRCodeCanvas
-              value={`${window.location.origin}/join/${session.code}`}
-              size={200}
-              bgColor="#0a0a0a"
-              fgColor="#d4af37"
-            />
-            <p className="text-aged-parchment text-center">
-              Scannez ce code QR pour rejoindre la session
-            </p>
-            <div className="text-2xl font-cinzel text-aged-gold">
-              {session.code}
+        {/* QR Code Dialog */}
+        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+          <DialogContent className="bg-charcoal border-aged-gold">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold">Code QR de la Session</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 p-4">
+              <Suspense fallback={<div className="flex h-52 w-52 items-center justify-center text-aged-parchment/70 text-sm">Chargement du QR code...</div>}>
+                <QRCodeCanvas
+                  value={`${window.location.origin}/join/${session.code}`}
+                  size={200}
+                  bgColor="#0a0a0a"
+                  fgColor="#d4af37"
+                />
+              </Suspense>
+              <p className="text-aged-parchment text-center">
+                Scannez ce code QR pour rejoindre la session
+              </p>
+              <div className="text-2xl font-cinzel text-aged-gold">
+                {session.code}
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Inventory Modal */}
-      <Dialog open={inventoryModalOpen} onOpenChange={setInventoryModalOpen}>
-        <DialogContent className="bg-charcoal border-aged-gold max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Gestion de l'Inventaire
-            </DialogTitle>
-          </DialogHeader>
-          {selectedCharacterForInventory && (
-            <CharacterInventoryManager
-              characterId={selectedCharacterForInventory}
-              isGM={true}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        {/* Inventory Modal */}
+        <Dialog open={inventoryModalOpen} onOpenChange={setInventoryModalOpen}>
+          <DialogContent className="bg-charcoal border-aged-gold max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Gestion de l'Inventaire
+              </DialogTitle>
+            </DialogHeader>
+            {selectedCharacterForInventory && (
+              <Suspense fallback={<div className="py-12 text-center text-aged-parchment/70 text-sm">Chargement de l'inventaire...</div>}>
+                <CharacterInventoryManager
+                  characterId={selectedCharacterForInventory}
+                  isGM={true}
+                />
+              </Suspense>
+            )}
+          </DialogContent>
+        </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteCharacterId} onOpenChange={() => setDeleteCharacterId(null)}>

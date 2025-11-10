@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, splitVendorChunkPlugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
@@ -6,6 +6,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 export default defineConfig({
   plugins: [
     react(),
+    splitVendorChunkPlugin(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
@@ -27,6 +28,30 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return;
+          }
+          if (id.includes("framer-motion")) {
+            return "framer-motion";
+          }
+          if (id.includes("@tanstack/react-query")) {
+            return "react-query";
+          }
+          if (id.includes("@radix-ui")) {
+            return "radix";
+          }
+          if (id.includes("lucide-react")) {
+            return "lucide";
+          }
+          if (id.includes("qrcode.react")) {
+            return "qrcode";
+          }
+        },
+      },
+    },
   },
   server: {
     fs: {
