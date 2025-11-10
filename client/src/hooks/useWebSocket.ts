@@ -36,7 +36,8 @@ export function useWebSocket(url?: string) {
           const message: WebSocketMessage = JSON.parse(event.data);
           message.timestamp = Date.now();
           setLastMessage(message);
-          setMessageHistory(prev => [...prev.slice(-99), message]);
+          // Keep only last 50 messages to reduce memory usage (was 100)
+          setMessageHistory(prev => [...prev.slice(-49), message]);
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
         }

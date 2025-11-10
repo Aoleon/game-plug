@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ interface CharacterCardProps {
   character: Character;
 }
 
-export default function CharacterCard({ character }: CharacterCardProps) {
+function CharacterCard({ character }: CharacterCardProps) {
   const sanityPercentage = (character.sanity / character.maxSanity) * 100;
   const hpPercentage = (character.hitPoints / character.maxHitPoints) * 100;
   
@@ -153,3 +154,6 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     </Card>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(CharacterCard);

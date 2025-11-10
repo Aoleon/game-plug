@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,7 @@ interface EnhancedCharacterCardProps {
   isConnected: boolean;
 }
 
-export default function EnhancedCharacterCard({
+function EnhancedCharacterCard({
   character,
   onEdit,
   onDelete,
@@ -541,3 +541,6 @@ export default function EnhancedCharacterCard({
     </Card>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+export default memo(EnhancedCharacterCard);
