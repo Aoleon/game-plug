@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { localLoginSchema } from "@shared/schema";
+import { localLoginSchema } from "@shared/auth-schemas";
 import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 import type { z } from "zod";
 

@@ -15,9 +15,8 @@ import {
   insertRollHistorySchema,
   insertChapterSchema,
   insertInventorySchema,
-  gmSignupSchema,
-  localLoginSchema,
 } from "@shared/schema";
+import { gmSignupSchema, localLoginSchema } from "@shared/auth-schemas";
 import { AuthService } from "./auth-service";
 import { z } from "zod";
 
