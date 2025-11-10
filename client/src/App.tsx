@@ -5,19 +5,29 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DiceSoundProvider } from "@/components/dice-sound-manager";
 import { useAuth } from "@/hooks/useAuth";
-import Landing from "@/pages/landing";
-import Home from "@/pages/home";
-import CharacterCreation from "@/pages/character-creation";
-import CharacterSheet from "@/pages/character-sheet";
-import CharacterEdit from "@/pages/character-edit";
-import GMDashboardSimplified from "@/pages/gm-dashboard-simplified";
-import GameBoard from "@/pages/gameboard";
-import SessionManager from "@/pages/session-manager";
-import JoinSession from "@/pages/join-session";
-import SelectCharacter from "@/pages/select-character";
-import GMSignup from "@/pages/gm-signup";
-import GMLogin from "@/pages/gm-login";
-import NotFound from "@/pages/not-found";
+import { lazy, Suspense } from "react";
+
+// Lazy load pages for better performance
+const Landing = lazy(() => import("@/pages/landing"));
+const Home = lazy(() => import("@/pages/home"));
+const CharacterCreation = lazy(() => import("@/pages/character-creation"));
+const CharacterSheet = lazy(() => import("@/pages/character-sheet"));
+const CharacterEdit = lazy(() => import("@/pages/character-edit"));
+const GMDashboardSimplified = lazy(() => import("@/pages/gm-dashboard-simplified"));
+const GameBoard = lazy(() => import("@/pages/gameboard"));
+const SessionManager = lazy(() => import("@/pages/session-manager"));
+const JoinSession = lazy(() => import("@/pages/join-session"));
+const SelectCharacter = lazy(() => import("@/pages/select-character"));
+const GMSignup = lazy(() => import("@/pages/gm-signup"));
+const GMLogin = lazy(() => import("@/pages/gm-login"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Loading component for suspense fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="loading-spinner" />
+  </div>
+);
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -62,7 +72,9 @@ function App() {
       <DiceSoundProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <Suspense fallback={<PageLoader />}>
+            <Router />
+          </Suspense>
         </TooltipProvider>
       </DiceSoundProvider>
     </QueryClientProvider>

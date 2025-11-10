@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollText, User, Heart, Brain, Sparkles, Coins } from "lucide-react";
@@ -8,7 +9,7 @@ interface CharacterCardProps {
   character: Character;
 }
 
-export default function CharacterCard({ character }: CharacterCardProps) {
+function CharacterCard({ character }: CharacterCardProps) {
   const sanityPercentage = (character.sanity / character.maxSanity) * 100;
   const hpPercentage = (character.hitPoints / character.maxHitPoints) * 100;
   
@@ -153,3 +154,5 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     </Card>
   );
 }
+
+export default memo(CharacterCard);
