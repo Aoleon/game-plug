@@ -43,7 +43,7 @@ export default function GameBoard() {
   const { toast } = useToast();
   
   // WebSocket for real-time updates
-  const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
+  const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
   
   // States
   const [projectionContent, setProjectionContent] = useState<ProjectionContent>({ type: 'none' });

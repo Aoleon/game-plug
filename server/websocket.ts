@@ -58,7 +58,7 @@ const clients = new Map<string, Set<ExtendedWebSocket>>();
 export function setupWebSocket(server: Server) {
   const wss = new WebSocketServer({ 
     server,
-    path: '/ws',
+    path: '/game-ws',
     verifyClient: (info, cb) => {
       // Basic verification - in production you'd want to verify auth tokens
       cb(true);

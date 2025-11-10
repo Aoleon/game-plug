@@ -55,7 +55,7 @@ export default function GMDashboardSimplified() {
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
   
   // WebSocket connection
-  const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
+  const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
 
   // Fetch session data
   const { data: session, isLoading: isLoadingSession } = useQuery<GameSession>({

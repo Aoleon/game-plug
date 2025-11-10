@@ -74,7 +74,7 @@ export default function GMDashboard() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // WebSocket connection for real-time updates
-  const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
+  const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
 
   useEffect(() => {
     if (isConnected && sessionId) {
