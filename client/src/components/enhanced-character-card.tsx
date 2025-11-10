@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,7 @@ interface EnhancedCharacterCardProps {
   isConnected: boolean;
 }
 
-export default function EnhancedCharacterCard({
+function EnhancedCharacterCard({
   character,
   onEdit,
   onDelete,
@@ -541,3 +541,18 @@ export default function EnhancedCharacterCard({
     </Card>
   );
 }
+
+// Optimisation: Mémoiser pour éviter les re-renders inutiles des cartes de personnage
+export default memo(EnhancedCharacterCard, (prevProps, nextProps) => {
+  return (
+    prevProps.character.id === nextProps.character.id &&
+    prevProps.character.hitPoints === nextProps.character.hitPoints &&
+    prevProps.character.sanity === nextProps.character.sanity &&
+    prevProps.character.magicPoints === nextProps.character.magicPoints &&
+    prevProps.character.luck === nextProps.character.luck &&
+    prevProps.character.money === nextProps.character.money &&
+    prevProps.character.sanityConditions.length === nextProps.character.sanityConditions.length &&
+    prevProps.character.activeEffects.length === nextProps.character.activeEffects.length &&
+    prevProps.isConnected === nextProps.isConnected
+  );
+});

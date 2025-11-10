@@ -27,11 +27,70 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-hook-form'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-alert-dialog',
+          ],
+          'vendor-radix-extra': [
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-label',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-menubar',
+            '@radix-ui/react-navigation-menu',
+            '@radix-ui/react-collapsible',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-toggle-group',
+          ],
+          'vendor-ui': ['framer-motion', 'lucide-react', 'cmdk', 'vaul'],
+          'vendor-utils': ['wouter', 'clsx', 'tailwind-merge', 'class-variance-authority', 'date-fns', 'zod'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
   server: {
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@tanstack/react-query',
+      'wouter',
+      'framer-motion',
+      'lucide-react',
+    ],
+    exclude: ['@replit/vite-plugin-cartographer'],
   },
 });
