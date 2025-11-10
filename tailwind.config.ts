@@ -74,10 +74,10 @@ export default {
       fontFamily: {
         'cinzel': ['Cinzel', 'serif'],
         'crimson': ['Crimson Text', 'serif'],
-        'source': ['Source Sans Pro', 'sans-serif'],
-        sans: ['Source Sans Pro', 'sans-serif'],
+        'source': ['Inter', 'sans-serif'], // Using Inter instead of Source Sans Pro
+        sans: ['Inter', 'sans-serif'],
         serif: ['Crimson Text', 'serif'],
-        mono: ['monospace'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

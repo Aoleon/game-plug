@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+/* Fonts are loaded in index.html for better performance */
 
 @tailwind base;
 @tailwind components;
@@ -55,7 +55,7 @@
   /* Typography */
   --font-cinzel: 'Cinzel', serif;
   --font-crimson: 'Crimson Text', serif;
-  --font-source: 'Source Sans Pro', sans-serif;
+  --font-source: 'Inter', sans-serif;
   
   /* Border radius */
   --radius: 0.5rem;
