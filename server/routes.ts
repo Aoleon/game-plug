@@ -311,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (eventData.sessionId) {
         broadcastToSession(eventData.sessionId, {
           type: 'chapter_event',
-          data: event
+          data: event as any
         });
       }
       
