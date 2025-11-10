@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { Wifi, WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,7 +8,7 @@ interface ConnectionIndicatorProps {
   className?: string;
 }
 
-export default function ConnectionIndicator({ isConnected, className }: ConnectionIndicatorProps) {
+function ConnectionIndicator({ isConnected, className }: ConnectionIndicatorProps) {
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -44,3 +45,6 @@ export default function ConnectionIndicator({ isConnected, className }: Connecti
     </AnimatePresence>
   );
 }
+
+// Memoize component to prevent unnecessary re-renders
+export default memo(ConnectionIndicator);
