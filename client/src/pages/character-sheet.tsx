@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Edit3, Dice6, Heart, Brain, Shield, AlertTriangle, Skull, Activity, AlertCircle, RefreshCw, Wand2, BookOpen, Save, Package, Plus, Trash2, Sword, ShieldCheck, Image, Sparkles, Coins, Edit2 } from "lucide-react";
-import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { formatSkillName } from "@/lib/skills";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 
@@ -757,14 +757,14 @@ export default function CharacterSheet() {
                 <div className="grid md:grid-cols-2 gap-6">
                   {Object.entries(skills)
                     .sort(([keyA], [keyB]) => {
-                      const nameA = SKILL_TRANSLATIONS[keyA] || keyA.charAt(0).toUpperCase() + keyA.slice(1).replace(/_/g, ' ');
-                      const nameB = SKILL_TRANSLATIONS[keyB] || keyB.charAt(0).toUpperCase() + keyB.slice(1).replace(/_/g, ' ');
+                      const nameA = formatSkillName(keyA);
+                      const nameB = formatSkillName(keyB);
                       return nameA.localeCompare(nameB, 'fr');
                     })
                     .map(([skillName, skillValue]) => (
                     <div key={skillName} className="flex justify-between items-center">
                       <span className="font-source text-aged-parchment">
-                        {SKILL_TRANSLATIONS[skillName] || skillName.charAt(0).toUpperCase() + skillName.slice(1).replace(/_/g, ' ')}
+                        {formatSkillName(skillName)}
                       </span>
                       <span className="text-bone-white font-bold" data-testid={`skill-${skillName}`}>
                         {skillValue}%
@@ -865,7 +865,7 @@ export default function CharacterSheet() {
                       <div key={roll.id} className="bg-cosmic-void border border-aged-gold rounded p-2 flex justify-between items-center">
                         <div>
                           <span className="text-bone-white font-source">
-                            {roll.skillName ? SKILL_TRANSLATIONS[roll.skillName] || roll.skillName : roll.rollType}
+                            {roll.skillName ? formatSkillName(roll.skillName) : roll.rollType}
                           </span>
                           {roll.outcome && (
                             <span className={`ml-2 text-sm ${roll.outcome.includes('success') ? 'text-green-400' : 'text-red-400'}`}>

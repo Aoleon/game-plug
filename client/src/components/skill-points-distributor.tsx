@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { SKILL_TRANSLATIONS, DEFAULT_SKILLS } from "@/lib/cthulhu-data";
+import { DEFAULT_SKILLS, SKILLS } from "@/lib/skills";
 import type { Character } from "@shared/schema";
 
 interface SkillPointsDistributorProps {
@@ -38,10 +38,10 @@ export default function SkillPointsDistributor({
   const currentSkills = character.skills as Record<string, number> || {};
 
   // Filter and sort skills
-  const allSkills = Object.entries(SKILL_TRANSLATIONS).map(([key, name]) => ({
+  const allSkills = SKILLS.map(({ key, name }) => ({
     key,
     name,
-    base: DEFAULT_SKILLS[key] || 0
+    base: DEFAULT_SKILLS[key] || 0,
   }));
   
   const filteredSkills = allSkills.filter(skill => 

@@ -27,6 +27,31 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return;
+          }
+
+          if (id.includes("framer-motion")) {
+            return "chunk-framer-motion";
+          }
+
+          if (id.includes("recharts")) {
+            return "chunk-recharts";
+          }
+
+          if (id.includes("@tanstack/react-query")) {
+            return "chunk-react-query";
+          }
+
+          if (id.includes("wouter")) {
+            return "chunk-router";
+          }
+        },
+      },
+    },
   },
   server: {
     fs: {

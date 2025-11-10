@@ -14,7 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
-import { OCCUPATIONS, DEFAULT_SKILLS, calculateOccupationPoints, SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { OCCUPATIONS, calculateOccupationPoints } from "@/lib/cthulhu-data";
+import { DEFAULT_SKILLS, formatSkillName } from "@/lib/skills";
 import { Dice6, Wand2, Save, X, AlertCircle, Sparkles, User, MapPin, Calendar, ToggleLeft, ToggleRight, Info, Lock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -873,7 +874,7 @@ export default function CharacterCreation() {
                     <AlertDescription className="text-aged-parchment">
                       <strong className="text-bone-white">Compétences d'occupation:</strong> 
                       {' ' + (OCCUPATIONS.find(occ => occ.name === selectedOccupation)?.occupationSkills.map(skill => 
-                        SKILL_TRANSLATIONS[skill] || skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                        formatSkillName(skill)
                       ).join(', ') || 'Aucune')}
                     </AlertDescription>
                   </Alert>
@@ -899,8 +900,8 @@ export default function CharacterCreation() {
                       <div className="grid md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
                         {Object.entries(DEFAULT_SKILLS)
                           .sort(([keyA], [keyB]) => {
-                            const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                            const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const nameA = formatSkillName(keyA);
+                            const nameB = formatSkillName(keyB);
                             return nameA.localeCompare(nameB, 'fr');
                           })
                           .map(([skillKey, baseValue]) => {
@@ -908,7 +909,7 @@ export default function CharacterCreation() {
                           const isOccupationSkill = occupation?.occupationSkills.includes(skillKey);
                           const allocated = allocatedPoints[skillKey] || 0;
                           const total = Math.min(baseValue + allocated, 90);
-                          const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          const skillName = formatSkillName(skillKey);
                           
                           return (
                             <div 
@@ -964,12 +965,12 @@ export default function CharacterCreation() {
                         {Object.entries(skillPoints)
                           .filter(([_, value]) => value > DEFAULT_SKILLS[_] || allocatedPoints[_])
                           .sort(([keyA], [keyB]) => {
-                            const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                            const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const nameA = formatSkillName(keyA);
+                            const nameB = formatSkillName(keyB);
                             return nameA.localeCompare(nameB, 'fr');
                           })
                           .map(([skillKey, value]) => {
-                            const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            const skillName = formatSkillName(skillKey);
                             const baseValue = DEFAULT_SKILLS[skillKey] || 0;
                             const allocated = allocatedPoints[skillKey] || 0;
                             

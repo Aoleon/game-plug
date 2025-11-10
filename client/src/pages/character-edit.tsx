@@ -14,7 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { rollCharacteristics, calculateDerivedStats } from "@/lib/dice";
-import { OCCUPATIONS, DEFAULT_SKILLS, calculateOccupationPoints, SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { OCCUPATIONS, calculateOccupationPoints } from "@/lib/cthulhu-data";
+import { DEFAULT_SKILLS, formatSkillName } from "@/lib/skills";
 import { Dice6, Wand2, Save, ArrowLeft, AlertCircle, Info, Edit, RefreshCw } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -672,13 +673,13 @@ export default function CharacterEdit() {
                 <div className="grid md:grid-cols-3 gap-3">
                   {Object.entries(DEFAULT_SKILLS)
                     .sort(([keyA], [keyB]) => {
-                      const nameA = SKILL_TRANSLATIONS[keyA] || keyA.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                      const nameB = SKILL_TRANSLATIONS[keyB] || keyB.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      const nameA = formatSkillName(keyA);
+                      const nameB = formatSkillName(keyB);
                       return nameA.localeCompare(nameB, 'fr');
                     })
                     .map(([skillKey, baseValue]) => {
                     const currentValue = skillPoints[skillKey] || baseValue;
-                    const skillName = SKILL_TRANSLATIONS[skillKey] || skillKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const skillName = formatSkillName(skillKey);
                     
                     return (
                       <div key={skillKey} className="flex justify-between items-center p-2 rounded border border-aged-gold/50 bg-cosmic-void/50">

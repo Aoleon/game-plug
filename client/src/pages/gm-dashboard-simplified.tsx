@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,7 +25,6 @@ import {
   Users, Copy, QrCode, Share2, Settings, Package,
   Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor
 } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
 import CharacterInventoryManager from "@/components/character-inventory-manager";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
@@ -53,6 +52,7 @@ export default function GMDashboardSimplified() {
   const [deleteCharacterId, setDeleteCharacterId] = useState<string | null>(null);
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
+  const [QRCodeComponent, setQRCodeComponent] = useState<ComponentType<any> | null>(null);
   
   // WebSocket connection
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/ws");
@@ -148,6 +148,22 @@ export default function GMDashboardSimplified() {
       setIsGeneratingAvatars(false);
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (showQRDialog && !QRCodeComponent) {
+      import("qrcode.react").then((mod) => {
+        if (isMounted) {
+          setQRCodeComponent(() => mod.QRCodeCanvas);
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showQRDialog, QRCodeComponent]);
 
   if (isLoadingSession) {
     return (
@@ -496,13 +512,19 @@ export default function GMDashboardSimplified() {
           <DialogHeader>
             <DialogTitle className="font-cinzel text-aged-gold">Code QR de la Session</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center space-y-4 p-4">
-            <QRCodeCanvas
-              value={`${window.location.origin}/join/${session.code}`}
-              size={200}
-              bgColor="#0a0a0a"
-              fgColor="#d4af37"
-            />
+            <div className="flex flex-col items-center space-y-4 p-4">
+              {QRCodeComponent ? (
+                <QRCodeComponent
+                  value={`${window.location.origin}/join/${session.code}`}
+                  size={200}
+                  bgColor="#0a0a0a"
+                  fgColor="#d4af37"
+                />
+              ) : (
+                <div className="flex h-[200px] w-[200px] items-center justify-center border border-dashed border-aged-gold text-aged-gold">
+                  Chargement...
+                </div>
+              )}
             <p className="text-aged-parchment text-center">
               Scannez ce code QR pour rejoindre la session
             </p>

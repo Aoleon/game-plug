@@ -17,7 +17,7 @@ import { rollDice } from "@/lib/dice";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { SKILL_TRANSLATIONS } from "@/lib/cthulhu-data";
+import { formatSkillName } from "@/lib/skills";
 import type { Character, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface EnhancedCharacterCardProps {
@@ -395,7 +395,7 @@ export default function EnhancedCharacterCard({
                         onClick={() => onRollSkill(skillKey, value)}
                         className="w-full justify-between h-7 text-xs hover:bg-cosmic-void"
                       >
-                        <span>{SKILL_TRANSLATIONS[skillKey] || skillKey}</span>
+                          <span>{formatSkillName(skillKey)}</span>
                         <span className="font-bold">{value}%</span>
                       </Button>
                     ))}

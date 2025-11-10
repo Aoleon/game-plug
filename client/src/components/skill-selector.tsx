@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle, BookOpen, Target } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DEFAULT_SKILLS, SKILL_TRANSLATIONS, calculateOccupationPoints, type Occupation } from "@/lib/cthulhu-data";
+import { calculateOccupationPoints, type Occupation } from "@/lib/cthulhu-data";
+import { DEFAULT_SKILLS, formatSkillName } from "@/lib/skills";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SkillSelectorProps {
@@ -95,25 +96,6 @@ export default function SkillSelector({ occupation, characteristics, onSkillsCha
       return 'Connaissances';
     }
     return 'Technique';
-  };
-  
-  const formatSkillName = (skillName: string) => {
-    return skillName
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase())
-      .replace('Art Craft', 'Art/Artisanat')
-      .replace('Fighting', 'Combat')
-      .replace('Firearms', 'Armes à feu')
-      .replace('Language Own', 'Langue Maternelle')
-      .replace('Language Other', 'Autre Langue')
-      .replace('Spot Hidden', 'Trouver Objet Caché')
-      .replace('Fast Talk', 'Baratin')
-      .replace('First Aid', 'Premiers Soins')
-      .replace('Drive Auto', 'Conduite Auto')
-      .replace('Library Use', 'Bibliothèque')
-      .replace('Natural World', 'Sciences Naturelles')
-      .replace('Sleight Of Hand', 'Pickpocket')
-      .replace('Credit Rating', 'Crédit');
   };
   
   const skillsByCategory = Object.keys(skills).reduce((acc, skillName) => {
@@ -216,8 +198,8 @@ export default function SkillSelector({ occupation, characteristics, onSkillsCha
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {occupation.occupationSkills
                     .sort((a, b) => {
-                      const nameA = SKILL_TRANSLATIONS[a] || formatSkillName(a);
-                      const nameB = SKILL_TRANSLATIONS[b] || formatSkillName(b);
+                      const nameA = formatSkillName(a);
+                      const nameB = formatSkillName(b);
                       return nameA.localeCompare(nameB, 'fr');
                     })
                     .map(skillName => (
@@ -260,8 +242,8 @@ export default function SkillSelector({ occupation, characteristics, onSkillsCha
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categorySkills
                       .sort((a, b) => {
-                        const nameA = SKILL_TRANSLATIONS[a] || formatSkillName(a);
-                        const nameB = SKILL_TRANSLATIONS[b] || formatSkillName(b);
+                        const nameA = formatSkillName(a);
+                        const nameB = formatSkillName(b);
                         return nameA.localeCompare(nameB, 'fr');
                       })
                       .map(skillName => {
