@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WebSocketMessage {
@@ -7,13 +7,17 @@ interface WebSocketMessage {
   timestamp?: number;
 }
 
+const MAX_HISTORY_SIZE = 100;
+
 export function useWebSocket(url?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const [messageHistory, setMessageHistory] = useState<WebSocketMessage[]>([]);
+  const messageHistoryRef = useRef<WebSocketMessage[]>([]);
+  const [historyUpdateTrigger, setHistoryUpdateTrigger] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttemptsRef = useRef(0);
+  const toastShownRef = useRef(false);
   const { toast } = useToast();
 
   const connect = useCallback(() => {
@@ -36,7 +40,13 @@ export function useWebSocket(url?: string) {
           const message: WebSocketMessage = JSON.parse(event.data);
           message.timestamp = Date.now();
           setLastMessage(message);
-          setMessageHistory(prev => [...prev.slice(-99), message]);
+          
+          // Optimisation: utiliser ref pour éviter les re-renders à chaque message
+          if (messageHistoryRef.current.length >= MAX_HISTORY_SIZE) {
+            messageHistoryRef.current = messageHistoryRef.current.slice(-MAX_HISTORY_SIZE + 1);
+          }
+          messageHistoryRef.current.push(message);
+          setHistoryUpdateTrigger(prev => prev + 1);
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
         }
@@ -57,7 +67,8 @@ export function useWebSocket(url?: string) {
             reconnectAttemptsRef.current++;
             connect();
           }, delay);
-        } else {
+        } else if (!toastShownRef.current) {
+          toastShownRef.current = true;
           toast({
             title: "Connexion perdue",
             description: "Impossible de se reconnecter au serveur",
@@ -99,12 +110,15 @@ export function useWebSocket(url?: string) {
     };
   }, [url, connect, disconnect]);
 
-  return {
+  // Mémoiser l'historique pour éviter la création d'un nouveau tableau à chaque render
+  const messageHistory = useMemo(() => [...messageHistoryRef.current], [historyUpdateTrigger]);
+
+  return useMemo(() => ({
     isConnected,
     sendMessage,
     lastMessage,
     messageHistory,
     disconnect,
     reconnect: connect,
-  };
+  }), [isConnected, sendMessage, lastMessage, messageHistory, disconnect, connect]);
 }

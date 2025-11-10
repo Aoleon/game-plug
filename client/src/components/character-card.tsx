@@ -3,12 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollText, User, Heart, Brain, Sparkles, Coins } from "lucide-react";
 import type { Character } from "@shared/schema";
+import { memo } from "react";
 
 interface CharacterCardProps {
   character: Character;
 }
 
-export default function CharacterCard({ character }: CharacterCardProps) {
+function CharacterCard({ character }: CharacterCardProps) {
   const sanityPercentage = (character.sanity / character.maxSanity) * 100;
   const hpPercentage = (character.hitPoints / character.maxHitPoints) * 100;
   
@@ -153,3 +154,15 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     </Card>
   );
 }
+
+// Optimisation: Mémoiser le composant pour éviter les re-renders inutiles
+export default memo(CharacterCard, (prevProps, nextProps) => {
+  return (
+    prevProps.character.id === nextProps.character.id &&
+    prevProps.character.name === nextProps.character.name &&
+    prevProps.character.hitPoints === nextProps.character.hitPoints &&
+    prevProps.character.sanity === nextProps.character.sanity &&
+    prevProps.character.magicPoints === nextProps.character.magicPoints &&
+    prevProps.character.money === nextProps.character.money
+  );
+});
