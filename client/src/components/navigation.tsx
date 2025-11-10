@@ -64,12 +64,12 @@ export default function Navigation() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {user && (
+              {!!user && (
                 <>
                   <div className="hidden md:flex items-center space-x-2 text-sm">
                     <span className="text-aged-parchment">Connecté:</span>
                     <span className="text-bone-white">
-                      {user.email || 'Utilisateur'}
+                      {(user as any).email || 'Utilisateur'}
                     </span>
                   </div>
                   
