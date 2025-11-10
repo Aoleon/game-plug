@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,17 +9,21 @@ interface CharacterCardProps {
   character: Character;
 }
 
-export default function CharacterCard({ character }: CharacterCardProps) {
-  const sanityPercentage = (character.sanity / character.maxSanity) * 100;
-  const hpPercentage = (character.hitPoints / character.maxHitPoints) * 100;
+function CharacterCard({ character }: CharacterCardProps) {
+  const sanityPercentage = useMemo(
+    () => (character.sanity / character.maxSanity) * 100,
+    [character.sanity, character.maxSanity]
+  );
+  const hpPercentage = useMemo(
+    () => (character.hitPoints / character.maxHitPoints) * 100,
+    [character.hitPoints, character.maxHitPoints]
+  );
   
-  const getSanityStatus = () => {
+  const sanityStatus = useMemo(() => {
     if (sanityPercentage < 30) return { text: "Critique", class: "text-blood-burgundy animate-pulse" };
     if (sanityPercentage < 50) return { text: "Faible", class: "text-yellow-500" };
     return { text: "Stable", class: "text-eldritch-green" };
-  };
-
-  const sanityStatus = getSanityStatus();
+  }, [sanityPercentage]);
 
   return (
     <Card className="bg-charcoal border-aged-gold parchment-bg eldritch-glow hover:shadow-lg transition-all duration-300">
@@ -153,3 +158,5 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     </Card>
   );
 }
+
+export default memo(CharacterCard);

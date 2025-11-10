@@ -1,14 +1,21 @@
+import { memo, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Eye, User, Users, LogOut, Settings } from "lucide-react";
 
-export default function Navigation() {
+function Navigation() {
   const { user } = useAuth();
   const [location] = useLocation();
   
-  const isPlayerView = location === "/" || location.startsWith("/character");
-  const isGMView = location.startsWith("/gm");
+  const isPlayerView = useMemo(
+    () => location === "/" || location.startsWith("/character"),
+    [location]
+  );
+  const isGMView = useMemo(
+    () => location.startsWith("/gm"),
+    [location]
+  );
 
   return (
     <>
@@ -147,3 +154,5 @@ export default function Navigation() {
     </>
   );
 }
+
+export default memo(Navigation);
