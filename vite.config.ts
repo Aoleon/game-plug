@@ -27,6 +27,50 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Optimisations de build pour réduire la taille du bundle
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Séparer les bibliothèques volumineuses dans leurs propres chunks
+          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
+          'router-vendor': ['wouter'],
+          'query-vendor': ['@tanstack/react-query'],
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+          ],
+          'animation-vendor': ['framer-motion'],
+          'icons-vendor': ['lucide-react'],
+          'charts-vendor': ['recharts'],
+        },
+        // Optimiser les noms de chunks pour le cache
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+      },
+    },
+    // Optimisations de minification
+    minify: 'esbuild',
+    target: 'esnext',
+    // Augmenter la limite de taille pour les warnings (en KB)
+    chunkSizeWarningLimit: 1000,
+    // Activer la compression CSS
+    cssMinify: true,
+  },
+  // Optimisations pour le développement
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'wouter',
+      '@tanstack/react-query',
+    ],
+    exclude: ['@replit/vite-plugin-cartographer'],
   },
   server: {
     fs: {

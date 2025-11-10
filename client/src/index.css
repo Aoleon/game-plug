@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+/* Les fonts sont chargées de manière asynchrone via index.html pour éviter de bloquer le rendu */
 
 @tailwind base;
 @tailwind components;
