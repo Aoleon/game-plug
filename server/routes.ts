@@ -1,6 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import { broadcastToSession } from "./websocket";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage } from "./openai";
@@ -31,7 +30,7 @@ function generateSessionCode(): string {
   return code;
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   // Health check endpoint for deployment  
   app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is running' });
@@ -1248,62 +1247,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket setup
-  const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-
-  // Store WebSocket connections by session
-  const sessionConnections = new Map<string, Set<WebSocket>>();
-
-  wss.on('connection', (ws) => {
-    let sessionId: string | null = null;
-
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'join_session' && data.sessionId) {
-          sessionId = data.sessionId;
-          
-          if (sessionId) {
-            if (!sessionConnections.has(sessionId)) {
-              sessionConnections.set(sessionId, new Set());
-            }
-          }
-          const connections = sessionId ? sessionConnections.get(sessionId) : null;
-          if (connections) {
-            connections.add(ws);
-          }
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-
-    ws.on('close', () => {
-      if (sessionId && sessionConnections.has(sessionId)) {
-        const connections = sessionConnections.get(sessionId);
-        if (connections) {
-          connections.delete(ws);
-          if (connections.size === 0) {
-            sessionConnections.delete(sessionId);
-          }
-        }
-      }
-    });
-  });
-
-  function broadcastToSession(sessionId: string, message: any) {
-    const connections = sessionConnections.get(sessionId);
-    if (connections) {
-      const messageStr = JSON.stringify(message);
-      connections.forEach((ws) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(messageStr);
-        }
-      });
-    }
-  }
-
-  return httpServer;
 }

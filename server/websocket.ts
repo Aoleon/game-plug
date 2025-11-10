@@ -135,7 +135,9 @@ export function setupWebSocket(server: Server) {
 function handleMessage(ws: ExtendedWebSocket, message: WSMessage, wss: WebSocketServer) {
   switch (message.type) {
     case 'join_session':
-      handleJoinSession(ws, message.data);
+      if (message.data && typeof message.data === 'object' && 'sessionId' in message.data) {
+        handleJoinSession(ws, message.data as JoinSessionData);
+      }
       break;
       
     case 'leave_session':
@@ -151,14 +153,16 @@ function handleMessage(ws: ExtendedWebSocket, message: WSMessage, wss: WebSocket
       break;
       
     case 'player_roll':
-      broadcastToSession(ws.sessionId, {
-        type: 'player_roll',
-        data: {
-          ...message.data,
-          userId: ws.userId
-        },
-        timestamp: new Date()
-      });
+      if (message.data && typeof message.data === 'object') {
+        broadcastToSession(ws.sessionId, {
+          type: 'player_roll',
+          data: {
+            ...(message.data as RollData),
+            userId: ws.userId
+          },
+          timestamp: new Date()
+        });
+      }
       break;
       
     case 'ambiance':
@@ -249,7 +253,7 @@ function handleLeaveSession(ws: ExtendedWebSocket) {
   ws.userId = undefined;
 }
 
-function broadcastToSession(sessionId: string | undefined, message: WSMessage, exclude?: ExtendedWebSocket) {
+export function broadcastToSession(sessionId: string | undefined, message: WSMessage, exclude?: ExtendedWebSocket) {
   if (!sessionId) return;
   
   const sessionClients = clients.get(sessionId);
