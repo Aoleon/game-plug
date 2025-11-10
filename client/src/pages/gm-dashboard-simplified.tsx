@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,12 +25,15 @@ import {
   Users, Copy, QrCode, Share2, Settings, Package,
   Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor
 } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
 import CharacterInventoryManager from "@/components/character-inventory-manager";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import NarrativeTools from "@/components/narrative-tools";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
+
+const QRCodeCanvas = lazy(() =>
+  import("qrcode.react").then((module) => ({ default: module.QRCodeCanvas })),
+);
 
 interface CharacterWithDetails extends Character {
   sanityConditions: SanityCondition[];
@@ -490,28 +493,38 @@ export default function GMDashboardSimplified() {
         )}
       </div>
 
-      {/* QR Code Dialog */}
-      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
-        <DialogContent className="bg-charcoal border-aged-gold">
-          <DialogHeader>
-            <DialogTitle className="font-cinzel text-aged-gold">Code QR de la Session</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center space-y-4 p-4">
-            <QRCodeCanvas
-              value={`${window.location.origin}/join/${session.code}`}
-              size={200}
-              bgColor="#0a0a0a"
-              fgColor="#d4af37"
-            />
-            <p className="text-aged-parchment text-center">
-              Scannez ce code QR pour rejoindre la session
-            </p>
-            <div className="text-2xl font-cinzel text-aged-gold">
-              {session.code}
+        {/* QR Code Dialog */}
+        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+          <DialogContent className="bg-charcoal border-aged-gold">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold">Code QR de la Session</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 p-4">
+              {showQRDialog ? (
+                <Suspense
+                  fallback={
+                    <div className="flex h-[200px] w-[200px] items-center justify-center text-aged-gold font-cinzel">
+                      Chargement…
+                    </div>
+                  }
+                >
+                  <QRCodeCanvas
+                    value={`${window.location.origin}/join/${session.code}`}
+                    size={200}
+                    bgColor="#0a0a0a"
+                    fgColor="#d4af37"
+                  />
+                </Suspense>
+              ) : null}
+              <p className="text-aged-parchment text-center">
+                Scannez ce code QR pour rejoindre la session
+              </p>
+              <div className="text-2xl font-cinzel text-aged-gold">
+                {session.code}
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
       {/* Inventory Modal */}
       <Dialog open={inventoryModalOpen} onOpenChange={setInventoryModalOpen}>
