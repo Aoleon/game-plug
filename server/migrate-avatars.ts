@@ -24,6 +24,12 @@ export async function migrateExistingAvatars() {
       try {
         console.log(`Migrating avatar for ${character.name} (${character.id})`);
         
+        // Skip if avatarUrl is null (should not happen due to filter, but be safe)
+        if (!character.avatarUrl) {
+          console.log(`Skipping ${character.name} - no avatar URL`);
+          continue;
+        }
+        
         // Download and save the image
         const localUrl = await downloadAndSaveImage(character.avatarUrl, character.id);
         
