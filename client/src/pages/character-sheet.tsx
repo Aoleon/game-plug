@@ -173,7 +173,8 @@ export default function CharacterSheet() {
     
     try {
       const response = await apiRequest("POST", `/api/characters/${characterId}/inventory`, newItem);
-      setInventory([...inventory, response]);
+      const item: InventoryItem = await response.json();
+      setInventory([...inventory, item]);
       setNewItem({
         name: '',
         description: '',
