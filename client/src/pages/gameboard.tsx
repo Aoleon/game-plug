@@ -134,38 +134,38 @@ export default function GameBoard() {
       )}>
         {showPlayerList ? (
           <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b border-aged-gold/30">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-cinzel text-aged-gold text-lg">
+            {/* Header - Compact */}
+            <div className="p-2 border-b border-aged-gold/30">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-cinzel text-aged-gold text-sm">
                   Tableau de Jeu
                 </h2>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setShowPlayerList(false)}
-                  className="text-aged-parchment hover:text-aged-gold p-1"
+                  className="text-aged-parchment hover:text-aged-gold p-1 h-6 w-6"
                 >
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-3 w-3" />
                 </Button>
               </div>
-              <div className="text-sm text-aged-parchment">
-                Session: {session.name}
+              <div className="text-[10px] text-aged-parchment truncate">
+                {session.name}
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <div className={cn(
-                  "w-2 h-2 rounded-full",
+                  "w-1.5 h-1.5 rounded-full",
                   isConnected ? "bg-eldritch-green" : "bg-blood-burgundy"
                 )} />
-                <span className="text-xs text-aged-parchment">
+                <span className="text-[9px] text-aged-parchment">
                   {isConnected ? "Connecté" : "Déconnecté"}
                 </span>
               </div>
             </div>
 
             {/* Characters List */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-3">
+            <ScrollArea className="flex-1 p-2">
+              <div className="space-y-2">
                 {characters.length === 0 ? (
                   <div className="text-aged-parchment text-center py-8">
                     <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -177,51 +177,51 @@ export default function GameBoard() {
                       "parchment-bg transition-all duration-200",
                       getCharacterStatusColor(character)
                     )}>
-                      <CardContent className="p-3">
+                      <CardContent className="p-2">
                         {/* Character Header */}
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-2 mb-1.5">
                           {character.avatarUrl ? (
                             <img
                               src={character.avatarUrl}
                               alt={character.name}
-                              className="w-10 h-10 rounded-full border border-aged-gold object-cover"
+                              className="w-8 h-8 rounded-full border border-aged-gold object-cover"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full border border-aged-gold bg-cosmic-void flex items-center justify-center">
-                              <Users className="h-5 w-5 text-aged-gold" />
+                            <div className="w-8 h-8 rounded-full border border-aged-gold bg-cosmic-void flex items-center justify-center">
+                              <Users className="h-4 w-4 text-aged-gold" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-cinzel text-sm font-bold text-aged-gold truncate">
+                            <h3 className="font-cinzel text-xs font-bold text-aged-gold truncate leading-tight">
                               {character.name}
                             </h3>
-                            <p className="text-xs text-aged-parchment truncate">
+                            <p className="text-[10px] text-aged-parchment truncate leading-tight">
                               {character.occupation}
                             </p>
                           </div>
                           {(character.hitPoints <= character.maxHitPoints * 0.3 || 
                             character.sanity <= character.maxSanity * 0.3) && (
-                            <Skull className="h-4 w-4 text-blood-burgundy animate-pulse" />
+                            <Skull className="h-3 w-3 text-blood-burgundy animate-pulse flex-shrink-0" />
                           )}
                         </div>
 
-                        {/* Vital Stats with Gauges */}
-                        <div className="space-y-2 mb-3">
+                        {/* Vital Stats - Compact Grid */}
+                        <div className="grid grid-cols-2 gap-1.5 mb-1.5">
                           {/* Health Points */}
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1">
-                                <Heart className="h-3 w-3 text-blood-burgundy" />
-                                <span className="text-xs text-aged-parchment font-medium">PV</span>
+                              <div className="flex items-center gap-0.5">
+                                <Heart className="h-2.5 w-2.5 text-blood-burgundy" />
+                                <span className="text-[10px] text-aged-parchment">PV</span>
                               </div>
-                              <span className="text-xs font-bold text-bone-white">
+                              <span className="text-[10px] font-bold text-bone-white">
                                 {character.hitPoints}/{character.maxHitPoints}
                               </span>
                             </div>
                             <Progress 
                               value={(character.hitPoints / character.maxHitPoints) * 100}
                               className={cn(
-                                "h-2 border border-aged-gold/30",
+                                "h-1.5 border border-aged-gold/30",
                                 "[&>[role=progressbar]]:bg-gradient-to-r",
                                 character.hitPoints <= character.maxHitPoints * 0.3 
                                   ? "[&>[role=progressbar]]:from-blood-burgundy [&>[role=progressbar]]:to-red-700"
@@ -233,20 +233,20 @@ export default function GameBoard() {
                           </div>
 
                           {/* Sanity */}
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1">
-                                <Brain className="h-3 w-3 text-purple-400" />
-                                <span className="text-xs text-aged-parchment font-medium">SAN</span>
+                              <div className="flex items-center gap-0.5">
+                                <Brain className="h-2.5 w-2.5 text-purple-400" />
+                                <span className="text-[10px] text-aged-parchment">SAN</span>
                               </div>
-                              <span className="text-xs font-bold text-bone-white">
+                              <span className="text-[10px] font-bold text-bone-white">
                                 {character.sanity}/{character.maxSanity}
                               </span>
                             </div>
                             <Progress 
                               value={(character.sanity / character.maxSanity) * 100}
                               className={cn(
-                                "h-2 border border-aged-gold/30",
+                                "h-1.5 border border-aged-gold/30",
                                 "[&>[role=progressbar]]:bg-gradient-to-r",
                                 character.sanity <= character.maxSanity * 0.3 
                                   ? "[&>[role=progressbar]]:from-purple-700 [&>[role=progressbar]]:to-purple-900 animate-pulse"
@@ -258,42 +258,42 @@ export default function GameBoard() {
                           </div>
 
                           {/* Magic Points */}
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1">
-                                <Sparkles className="h-3 w-3 text-cyan-400" />
-                                <span className="text-xs text-aged-parchment font-medium">PM</span>
+                              <div className="flex items-center gap-0.5">
+                                <Sparkles className="h-2.5 w-2.5 text-cyan-400" />
+                                <span className="text-[10px] text-aged-parchment">PM</span>
                               </div>
-                              <span className="text-xs font-bold text-bone-white">
+                              <span className="text-[10px] font-bold text-bone-white">
                                 {character.magicPoints}/{character.maxMagicPoints}
                               </span>
                             </div>
                             <Progress 
                               value={(character.magicPoints / character.maxMagicPoints) * 100}
-                              className="h-2 border border-aged-gold/30 [&>[role=progressbar]]:bg-gradient-to-r [&>[role=progressbar]]:from-cyan-400 [&>[role=progressbar]]:to-blue-500"
+                              className="h-1.5 border border-aged-gold/30 [&>[role=progressbar]]:bg-gradient-to-r [&>[role=progressbar]]:from-cyan-400 [&>[role=progressbar]]:to-blue-500"
                             />
                           </div>
 
-                          {/* Money (different display) */}
-                          <div className="flex items-center justify-between bg-cosmic-void/30 rounded p-1">
-                            <div className="flex items-center gap-1">
-                              <Coins className="h-3 w-3 text-yellow-500" />
-                              <span className="text-xs text-aged-parchment font-medium">Argent</span>
+                          {/* Money */}
+                          <div className="flex items-center justify-between bg-cosmic-void/30 rounded px-1 py-0.5">
+                            <div className="flex items-center gap-0.5">
+                              <Coins className="h-2.5 w-2.5 text-yellow-500" />
+                              <span className="text-[10px] text-aged-parchment">$</span>
                             </div>
-                            <span className="text-xs font-bold text-yellow-500">
-                              ${typeof character.money === 'string' ? parseFloat(character.money).toFixed(0) : (character.money || 0).toFixed(0)}
+                            <span className="text-[10px] font-bold text-yellow-500">
+                              {typeof character.money === 'string' ? parseFloat(character.money).toFixed(0) : (character.money || 0).toFixed(0)}
                             </span>
                           </div>
                         </div>
 
-                        {/* Active Effects */}
+                        {/* Active Effects - Only show critical ones */}
                         {(character.sanityConditions.length > 0 || character.activeEffects.length > 0) && (
-                          <div className="space-y-1">
-                            {character.sanityConditions.slice(0, 2).map((condition) => (
+                          <div className="flex flex-wrap gap-1">
+                            {character.sanityConditions.slice(0, 1).map((condition) => (
                               <Badge 
                                 key={condition.id} 
                                 variant="outline" 
-                                className="text-xs bg-purple-900/30 border-purple-400 w-full justify-center"
+                                className="text-[9px] bg-purple-900/30 border-purple-400 px-1 py-0 h-4"
                               >
                                 {condition.type === 'phobia' ? '😨' : '🌀'} {condition.name}
                               </Badge>
@@ -303,7 +303,7 @@ export default function GameBoard() {
                                 key={effect.id} 
                                 variant="outline" 
                                 className={cn(
-                                  "text-xs w-full justify-center",
+                                  "text-[9px] px-1 py-0 h-4",
                                   effect.type === 'buff' ? "bg-eldritch-green/20 border-eldritch-green" : "bg-blood-burgundy/20 border-blood-burgundy"
                                 )}
                               >
