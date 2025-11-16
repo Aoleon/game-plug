@@ -201,7 +201,7 @@ export default function GameBoard() {
                           </div>
                           {(character.hitPoints <= character.maxHitPoints * 0.3 || 
                             character.sanity <= character.maxSanity * 0.3) && (
-                            <Skull className="h-3 w-3 text-blood-burgundy animate-pulse flex-shrink-0" />
+                            <Skull className="h-3 w-3 text-blood-burgundy flex-shrink-0" />
                           )}
                         </div>
 
@@ -249,7 +249,7 @@ export default function GameBoard() {
                                 "h-1.5 border border-aged-gold/30",
                                 "[&>[role=progressbar]]:bg-gradient-to-r",
                                 character.sanity <= character.maxSanity * 0.3 
-                                  ? "[&>[role=progressbar]]:from-purple-700 [&>[role=progressbar]]:to-purple-900 animate-pulse"
+                                  ? "[&>[role=progressbar]]:from-purple-700 [&>[role=progressbar]]:to-purple-900"
                                   : character.sanity <= character.maxSanity * 0.6
                                   ? "[&>[role=progressbar]]:from-purple-500 [&>[role=progressbar]]:to-purple-700"
                                   : "[&>[role=progressbar]]:from-blue-400 [&>[role=progressbar]]:to-purple-500"
