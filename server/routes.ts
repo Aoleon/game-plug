@@ -1240,6 +1240,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         birthplace: sourceCharacter.birthplace || undefined,
         residence: sourceCharacter.residence || undefined,
         gender: sourceCharacter.gender || undefined,
+        
+        // Copy physical characteristics
+        height: sourceCharacter.height || undefined,
+        build: sourceCharacter.build || undefined,
+        hairColor: sourceCharacter.hairColor || undefined,
+        eyeColor: sourceCharacter.eyeColor || undefined,
+        
         sessionId: sessionId,
         userId: sourceCharacter.userId || undefined,
         
