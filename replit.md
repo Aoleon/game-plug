@@ -31,7 +31,8 @@ Preferred communication style: Simple, everyday language.
 
 ## Game Logic Implementation
 - **Character Creation**: 7th Edition rules implementation with automatic characteristic generation and derived stat calculation
-- **Character Import**: GMs can import characters from their other sessions. Stats, skills, and avatars are copied while HP/Sanity/MP are reset to max and history is cleared (inventory, effects, conditions, roll history)
+  - Physical characteristics (height, build, hair color, eye color) are now stored in dedicated database columns
+- **Character Import**: GMs can import characters from their other sessions. Stats, skills, avatars, and physical characteristics are copied while HP/Sanity/MP are reset to max and history is cleared (inventory, effects, conditions, roll history)
 - **Dice System**: Custom dice rolling engine supporting all Call of Cthulhu mechanics (1d100, damage dice, etc.)
 - **Sanity System**: Complete sanity tracking with phobias, manias, and temporary insanity effects
 - **Skills Management**: Full skill system with occupation-based starting values and advancement tracking
@@ -214,6 +215,13 @@ Every feature addition or update requires comprehensive testing across all appli
 ## Recent Updates & Testing Status
 
 ### Latest Features Tested (November 2025)
+0. **Physical Characteristics Migration** (Nov 16): Fixed character import to preserve physical traits
+   - Added database columns for height, build, hairColor, eyeColor to characters table
+   - Updated character creation to save physical characteristics to database
+   - Updated character import to copy physical characteristics between sessions
+   - Physical traits now persist across character imports instead of being lost
+
+
 1. **Dual Authentication System** (Nov 16): Complete OIDC + local auth support across all routes
    - All 25+ backend routes converted to use `getUserId()` helper
    - Signup flow robustified with deterministic cache updates
