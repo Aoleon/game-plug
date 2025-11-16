@@ -32,6 +32,7 @@ import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import NarrativeTools from "@/components/narrative-tools";
 import ImportCharacterDialog from "@/components/import-character-dialog";
 import VisualProjectionDialog from "@/components/visual-projection-dialog";
+import NarrativeJournal from "@/components/narrative-journal";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -57,6 +58,7 @@ export default function GMDashboardSimplified() {
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showProjectionDialog, setShowProjectionDialog] = useState(false);
+  const [showNarrativeJournal, setShowNarrativeJournal] = useState(false);
   
   // WebSocket connection
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -238,6 +240,18 @@ export default function GMDashboardSimplified() {
               icon={<Monitor className="h-4 w-4" />}
             >
               GameBoard
+            </EnhancedButton>
+            
+            {/* Narrative Journal Button */}
+            <EnhancedButton
+              size="sm"
+              variant="outline"
+              onClick={() => setShowNarrativeJournal(true)}
+              className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
+              data-testid="button-narrative-journal"
+              icon={<BookOpen className="h-4 w-4" />}
+            >
+              Journal
             </EnhancedButton>
             
             {/* Tools Popover */}
@@ -589,6 +603,21 @@ export default function GMDashboardSimplified() {
           onOpenChange={setShowProjectionDialog}
           sessionId={sessionId}
         />
+      )}
+
+      {/* Narrative Journal Dialog */}
+      {sessionId && (
+        <Dialog open={showNarrativeJournal} onOpenChange={setShowNarrativeJournal}>
+          <DialogContent className="bg-charcoal border-aged-gold max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-cinzel text-aged-gold flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Journal Narratif
+              </DialogTitle>
+            </DialogHeader>
+            <NarrativeJournal sessionId={sessionId} />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Floating Projection Button */}
