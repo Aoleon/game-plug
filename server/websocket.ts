@@ -11,7 +11,8 @@ interface ExtendedWebSocket extends WebSocket {
 // Define specific data types for different message types
 interface JoinSessionData {
   sessionId: string;
-  userId: string;
+  userId?: string;
+  role?: string;
 }
 
 interface RollData {
@@ -210,18 +211,22 @@ function handleJoinSession(ws: ExtendedWebSocket, data: JoinSessionData) {
   ws.sessionId = data.sessionId;
   ws.userId = data.userId;
   
+  console.log(`WebSocket joined session ${data.sessionId} with userId: ${data.userId || 'guest'}, role: ${data.role || 'player'}`);
+  
   // Add to session clients
   if (!clients.has(data.sessionId)) {
     clients.set(data.sessionId, new Set());
   }
   clients.get(data.sessionId)!.add(ws);
   
-  // Notify others in session
-  broadcastToSession(data.sessionId, {
-    type: 'user_joined',
-    data: { userId: data.userId },
-    timestamp: new Date()
-  }, ws);
+  // Notify others in session (only if userId is provided)
+  if (data.userId) {
+    broadcastToSession(data.sessionId, {
+      type: 'user_joined',
+      data: { userId: data.userId },
+      timestamp: new Date()
+    }, ws);
+  }
   
   // Send confirmation
   ws.send(JSON.stringify({

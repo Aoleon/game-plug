@@ -113,6 +113,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // For Replit OIDC users, check if a user with this email already exists
+    if (userData.authType === 'replit' || !userData.authType) {
+      const existingUsers = await this.getUserByEmail(userData.email || '');
+      const existingUser = existingUsers.find(u => u.authType === 'replit');
+      
+      if (existingUser && existingUser.id !== userData.id) {
+        // Update the existing Replit user's ID to match the new sub
+        const [user] = await db
+          .update(users)
+          .set({
+            ...userData,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, existingUser.id))
+          .returning();
+        return user;
+      }
+    }
+
+    // Standard upsert by ID
     const [user] = await db
       .insert(users)
       .values(userData)

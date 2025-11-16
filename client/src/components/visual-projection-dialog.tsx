@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,16 @@ export default function VisualProjectionDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const hasJoinedSession = useRef(false);
+  
+  // Join the WebSocket session when connected
+  useEffect(() => {
+    if (isConnected && sessionId && !hasJoinedSession.current) {
+      sendMessage('join_session', { sessionId, role: 'gm' });
+      hasJoinedSession.current = true;
+      console.log(`Visual Projection Dialog joined session ${sessionId}`);
+    }
+  }, [isConnected, sessionId, sendMessage]);
 
   const handleGenerateImage = async () => {
     if (!imagePrompt.trim()) return;
