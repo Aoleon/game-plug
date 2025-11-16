@@ -14,7 +14,7 @@ function CharacterCard({ character }: CharacterCardProps) {
   const hpPercentage = (character.hitPoints / character.maxHitPoints) * 100;
   
   const getSanityStatus = () => {
-    if (sanityPercentage < 30) return { text: "Critique", class: "text-blood-burgundy animate-pulse" };
+    if (sanityPercentage < 30) return { text: "Critique", class: "text-blood-burgundy" };
     if (sanityPercentage < 50) return { text: "Faible", class: "text-yellow-500" };
     return { text: "Stable", class: "text-eldritch-green" };
   };
