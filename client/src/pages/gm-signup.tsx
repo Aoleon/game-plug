@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { gmSignupSchema } from "@shared/schema";
 import { Eye, EyeOff, Sparkles, User, Mail, Lock } from "lucide-react";
 import type { z } from "zod";
@@ -32,13 +32,20 @@ export default function GMSignup() {
 
   const signupMutation = useMutation({
     mutationFn: (data: SignupForm) => apiRequest("POST", "/api/auth/signup", data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Refetch auth state to ensure user is authenticated before navigating
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Compte créé avec succès !",
         description: "Vous êtes maintenant connecté en tant que Maître de Jeu.",
         variant: "default",
       });
-      navigate("/");
+      
+      // Navigate after a small delay to ensure auth state is updated
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     },
     onError: (error: Error) => {
       toast({

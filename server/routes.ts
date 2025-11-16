@@ -129,12 +129,18 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Helper to get userId from either OIDC or local auth
+  const getUserId = (req: any): string => {
+    return req.user.claims ? req.user.claims.sub : req.user.id;
+  };
+
   // Game session routes
   app.post('/api/sessions', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const sessionData = insertGameSessionSchema.parse({
         ...req.body,
-        gmId: req.user.claims.sub,
+        gmId: userId,
         code: generateSessionCode(),
         status: 'active'
       });
@@ -148,7 +154,8 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.get('/api/sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const sessions = await storage.getGameSessionsByGM(req.user.claims.sub);
+      const userId = getUserId(req);
+      const sessions = await storage.getGameSessionsByGM(userId);
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -690,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get narrative entries for a session
   app.get('/api/sessions/:sessionId/narrative', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { sessionId } = req.params;
       
       // Check if user is GM of the session
@@ -710,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Create new narrative entry
   app.post('/api/sessions/:sessionId/narrative', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { sessionId } = req.params;
       const { content, entryType } = req.body;
       
@@ -742,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get AI narrative suggestion
   app.post('/api/sessions/:sessionId/narrative/ai-suggest', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { sessionId } = req.params;
       const { context } = req.body;
       
@@ -763,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update narrative entry
   app.patch('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { id } = req.params;
       const { content, entryType, metadata, isAiGenerated } = req.body;
       
@@ -818,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Delete narrative entry
   app.delete('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { id } = req.params;
       
       // Get the existing entry to check permissions
