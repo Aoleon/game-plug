@@ -123,3 +123,38 @@ export async function generateManiaDescription(maniaName: string): Promise<strin
     return `An obsessive compulsion related to ${maniaName.toLowerCase()}.`;
   }
 }
+
+export async function generateNarrativeSuggestion(context: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `Tu es un assistant narratif expert pour les Gardiens (Game Masters) de Call of Cthulhu 7e édition. 
+          
+Ton rôle est d'aider le Gardien à enrichir son récit en proposant des suggestions narratives atmosphériques qui s'inscrivent dans l'univers lovecraftien des années 1920.
+
+Directives :
+- Écris en français de manière fluide et immersive
+- Inspire-toi du contexte fourni pour créer des continuations ou développements narratifs cohérents
+- Évoque l'atmosphère du cosmic horror : mystère, tension, découvertes troublantes
+- Propose des descriptions de scènes, d'événements, de PNJ, de lieux ou d'indices
+- Reste concis (100-150 mots maximum)
+- Utilise un ton évocateur et atmosphérique typique des récits lovecraftiens`
+        },
+        {
+          role: "user",
+          content: `Contexte récent de la session :\n\n${context || "Début de la session"}\n\nPropose une suggestion narrative pour continuer ou enrichir le récit.`
+        }
+      ],
+      max_tokens: 300,
+      temperature: 0.8,
+    });
+
+    return response.choices[0].message.content || "Les ombres s'allongent et une tension palpable emplit l'air...";
+  } catch (error) {
+    console.error("Error generating narrative suggestion:", error);
+    return "Une atmosphère étrange plane dans l'air, laissant présager des événements mystérieux à venir...";
+  }
+}

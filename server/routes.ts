@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { broadcastToSession } from "./websocket";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage } from "./openai";
+import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage, generateNarrativeSuggestion } from "./openai";
 import { migrateExistingAvatars } from "./migrate-avatars";
 import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
 import { applyHealing, applySanityRecovery, applyMagicRecovery, applyLuckBoost, applySkillBonus } from "./buff-logic";
@@ -681,6 +681,92 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error deleting inventory item:", error);
       res.status(500).json({ message: "Failed to delete item" });
+    }
+  });
+
+  // Narrative entries routes
+  
+  // Get narrative entries for a session
+  app.get('/api/sessions/:sessionId/narrative', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { sessionId } = req.params;
+      
+      // Check if user is GM of the session
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can access narrative entries" });
+      }
+      
+      const entries = await storage.getSessionNarrativeEntries(sessionId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching narrative entries:", error);
+      res.status(500).json({ message: "Failed to fetch narrative entries" });
+    }
+  });
+  
+  // Create new narrative entry
+  app.post('/api/sessions/:sessionId/narrative', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { sessionId } = req.params;
+      const { content, entryType } = req.body;
+      
+      // Check if user is GM of the session
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can create narrative entries" });
+      }
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+      
+      const entry = await storage.createNarrativeEntry({
+        sessionId,
+        gmId: userId,
+        content: content.trim(),
+        entryType: entryType || 'note',
+        isAiGenerated: false,
+      });
+      
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating narrative entry:", error);
+      res.status(500).json({ message: "Failed to create narrative entry" });
+    }
+  });
+  
+  // Get AI narrative suggestion
+  app.post('/api/sessions/:sessionId/narrative/ai-suggest', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { sessionId } = req.params;
+      const { context } = req.body;
+      
+      // Check if user is GM of the session
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can request AI suggestions" });
+      }
+      
+      const suggestion = await generateNarrativeSuggestion(context || "");
+      res.json({ suggestion });
+    } catch (error) {
+      console.error("Error generating AI suggestion:", error);
+      res.status(500).json({ message: "Failed to generate AI suggestion" });
+    }
+  });
+  
+  // Delete narrative entry
+  app.delete('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteNarrativeEntry(req.params.id);
+      res.json({ message: "Narrative entry deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting narrative entry:", error);
+      res.status(500).json({ message: "Failed to delete narrative entry" });
     }
   });
 
