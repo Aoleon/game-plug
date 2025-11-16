@@ -94,6 +94,7 @@ export interface IStorage {
   
   // Narrative entry operations
   createNarrativeEntry(entry: InsertNarrativeEntry): Promise<NarrativeEntry>;
+  getNarrativeEntry(id: string): Promise<NarrativeEntry | undefined>;
   getSessionNarrativeEntries(sessionId: string): Promise<NarrativeEntry[]>;
   updateNarrativeEntry(id: string, data: Partial<InsertNarrativeEntry>): Promise<NarrativeEntry>;
   deleteNarrativeEntry(id: string): Promise<void>;
@@ -471,6 +472,14 @@ export class DatabaseStorage implements IStorage {
       .values(entry)
       .returning();
     return narrativeEntry;
+  }
+  
+  async getNarrativeEntry(id: string): Promise<NarrativeEntry | undefined> {
+    const [entry] = await db
+      .select()
+      .from(narrativeEntries)
+      .where(eq(narrativeEntries.id, id));
+    return entry;
   }
   
   async getSessionNarrativeEntries(sessionId: string): Promise<NarrativeEntry[]> {

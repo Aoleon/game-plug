@@ -763,17 +763,50 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update narrative entry
   app.patch('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user?.claims?.sub;
       const { id } = req.params;
-      const { content, entryType } = req.body;
+      const { content, entryType, metadata, isAiGenerated } = req.body;
       
+      // Validate input
       if (!content || !content.trim()) {
         return res.status(400).json({ message: "Content is required" });
       }
       
-      const entry = await storage.updateNarrativeEntry(id, {
+      // Validate entry type
+      const validTypes = ['note', 'event', 'npc', 'location', 'clue'];
+      if (entryType && !validTypes.includes(entryType)) {
+        return res.status(400).json({ message: "Invalid entry type" });
+      }
+      
+      // Get the existing entry to check permissions
+      const existingEntry = await storage.getNarrativeEntry(id);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Narrative entry not found" });
+      }
+      
+      // Verify user is the GM who created this entry
+      if (existingEntry.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM who created this entry can edit it" });
+      }
+      
+      // Only allow updating specific fields - NEVER gmId or sessionId
+      const updateData: Partial<typeof existingEntry> = {
         content: content.trim(),
-        entryType: entryType || 'note',
-      });
+      };
+      
+      if (entryType !== undefined) {
+        updateData.entryType = entryType;
+      }
+      
+      if (metadata !== undefined) {
+        updateData.metadata = metadata;
+      }
+      
+      if (isAiGenerated !== undefined) {
+        updateData.isAiGenerated = isAiGenerated;
+      }
+      
+      const entry = await storage.updateNarrativeEntry(id, updateData);
       
       res.json(entry);
     } catch (error) {
@@ -785,7 +818,21 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Delete narrative entry
   app.delete('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
     try {
-      await storage.deleteNarrativeEntry(req.params.id);
+      const userId = req.user?.claims?.sub;
+      const { id } = req.params;
+      
+      // Get the existing entry to check permissions
+      const existingEntry = await storage.getNarrativeEntry(id);
+      if (!existingEntry) {
+        return res.status(404).json({ message: "Narrative entry not found" });
+      }
+      
+      // Verify user is the GM who created this entry
+      if (existingEntry.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM who created this entry can delete it" });
+      }
+      
+      await storage.deleteNarrativeEntry(id);
       res.json({ message: "Narrative entry deleted successfully" });
     } catch (error) {
       console.error("Error deleting narrative entry:", error);
