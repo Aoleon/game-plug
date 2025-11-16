@@ -3,23 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { 
-  Users, Image, Upload, Link, Wand2, Monitor, 
+  Users, Monitor, 
   Heart, Brain, Shield, Coins, Eye, EyeOff,
-  Maximize, Minimize, RotateCcw, Download,
+  Maximize, Minimize, RotateCcw,
   Skull, AlertTriangle, Sparkles, Activity
 } from "lucide-react";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
@@ -40,7 +35,6 @@ export default function GameBoard() {
   const params = useParams();
   const sessionId = params.sessionId;
   const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
   
   // WebSocket for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -49,10 +43,6 @@ export default function GameBoard() {
   const [projectionContent, setProjectionContent] = useState<ProjectionContent>({ type: 'none' });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPlayerList, setShowPlayerList] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Data fetching
   const { data: session } = useQuery<GameSession>({
@@ -92,79 +82,6 @@ export default function GameBoard() {
       }
     }
   }, [lastMessage, sessionId]);
-
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
-    
-    setIsGenerating(true);
-    try {
-      const response = await apiRequest("POST", "/api/gameboard/generate-scene", {
-        prompt: imagePrompt,
-        sessionId: sessionId
-      });
-      const data = await response.json();
-      
-      const newContent: ProjectionContent = {
-        type: 'image',
-        url: data.imageUrl,
-        description: imagePrompt,
-        prompt: imagePrompt
-      };
-      
-      setProjectionContent(newContent);
-      
-      // Broadcast to WebSocket for sync
-      if (isConnected) {
-        sendMessage('projection_update', {
-          sessionId,
-          content: newContent,
-          timestamp: new Date()
-        });
-      }
-      
-      toast({
-        title: "Image générée",
-        description: "La scène a été générée et projetée.",
-      });
-      
-      setImagePrompt("");
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de générer l'image.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleLoadFromUrl = () => {
-    if (!imageUrl.trim()) return;
-    
-    const newContent: ProjectionContent = {
-      type: 'image',
-      url: imageUrl,
-      description: "Image depuis URL"
-    };
-    
-    setProjectionContent(newContent);
-    
-    if (isConnected) {
-      sendMessage('projection_update', {
-        sessionId,
-        content: newContent,
-        timestamp: new Date()
-      });
-    }
-    
-    toast({
-      title: "Image chargée",
-      description: "L'image a été chargée depuis l'URL.",
-    });
-    
-    setImageUrl("");
-  };
 
   const clearProjection = () => {
     const newContent: ProjectionContent = { type: 'none' };
@@ -518,96 +435,7 @@ export default function GameBoard() {
           )}
         </div>
 
-        {/* Tools Panel */}
-        {!isFullscreen && (
-          <div className="bg-charcoal border-t border-aged-gold/30 p-4">
-            <Tabs defaultValue="ai-generation" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-cosmic-void">
-                <TabsTrigger value="ai-generation" className="text-xs">
-                  <Wand2 className="h-3 w-3 mr-1" />
-                  Génération IA
-                </TabsTrigger>
-                <TabsTrigger value="url-load" className="text-xs">
-                  <Link className="h-3 w-3 mr-1" />
-                  Charger URL
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="text-xs">
-                  <Upload className="h-3 w-3 mr-1" />
-                  Import
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="ai-generation" className="mt-4">
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Décrivez la scène à générer (ex: Une bibliothèque sombre aux livres anciens, éclairée par des bougies vacillantes...)"
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    className="bg-cosmic-void border-aged-gold text-bone-white h-20 resize-none"
-                  />
-                  <Button
-                    onClick={handleGenerateImage}
-                    disabled={!imagePrompt.trim() || isGenerating}
-                    className="w-full bg-eldritch-green hover:bg-green-700 text-bone-white"
-                  >
-                    <Wand2 className="h-4 w-4 mr-2" />
-                    {isGenerating ? "Génération en cours..." : "Générer et Projeter"}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="url-load" className="mt-4">
-                <div className="space-y-3">
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="bg-cosmic-void border-aged-gold text-bone-white"
-                  />
-                  <Button
-                    onClick={handleLoadFromUrl}
-                    disabled={!imageUrl.trim()}
-                    className="w-full bg-aged-gold hover:bg-yellow-600 text-deep-black font-bold"
-                  >
-                    <Link className="h-4 w-4 mr-2" />
-                    Charger depuis URL
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="upload" className="mt-4">
-                <div className="space-y-3">
-                  <div className="text-center p-8 border-2 border-dashed border-aged-gold/30 rounded-lg">
-                    <Upload className="h-12 w-12 mx-auto mb-2 text-aged-gold opacity-50" />
-                    <p className="text-aged-parchment mb-2">Import d'images à venir</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setUploadDialogOpen(true)}
-                      className="border-aged-gold text-aged-gold hover:bg-cosmic-void"
-                    >
-                      Sélectionner un fichier
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
       </div>
-
-      {/* Upload Dialog (placeholder) */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="bg-charcoal border-aged-gold">
-          <DialogHeader>
-            <DialogTitle className="font-cinzel text-aged-gold">Import d'Image</DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-8">
-            <p className="text-aged-parchment">
-              Fonctionnalité d'import à implémenter avec le stockage d'objets.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
