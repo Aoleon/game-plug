@@ -760,6 +760,28 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   
+  // Update narrative entry
+  app.patch('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { content, entryType } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+      
+      const entry = await storage.updateNarrativeEntry(id, {
+        content: content.trim(),
+        entryType: entryType || 'note',
+      });
+      
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating narrative entry:", error);
+      res.status(500).json({ message: "Failed to update narrative entry" });
+    }
+  });
+  
   // Delete narrative entry
   app.delete('/api/narrative/:id', isAuthenticated, async (req: any, res) => {
     try {

@@ -11,7 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   BookOpen, Sparkles, Save, Trash2, 
   MapPin, Users, Lightbulb, Scroll, 
-  Calendar, Loader2
+  Calendar, Loader2, Edit, X
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -26,6 +26,8 @@ export function NarrativeJournal({ sessionId }: NarrativeJournalProps) {
   const [newEntry, setNewEntry] = useState("");
   const [entryType, setEntryType] = useState<"note" | "event" | "npc" | "location" | "clue">("note");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
   
   const { data: entries = [], isLoading } = useQuery<NarrativeEntry[]>({
     queryKey: ["/api/sessions", sessionId, "narrative"],
@@ -48,6 +50,29 @@ export function NarrativeJournal({ sessionId }: NarrativeJournalProps) {
       toast({
         title: "Erreur",
         description: "Impossible d'ajouter l'entrée narrative.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateEntryMutation = useMutation({
+    mutationFn: async ({ id, content, entryType }: { id: string; content: string; entryType: string }) => {
+      const response = await apiRequest("PATCH", `/api/narrative/${id}`, { content, entryType });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "narrative"] });
+      setEditingEntryId(null);
+      setEditingContent("");
+      toast({
+        title: "Entrée mise à jour",
+        description: "L'entrée narrative a été modifiée.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'entrée narrative.",
         variant: "destructive",
       });
     },
@@ -104,6 +129,25 @@ export function NarrativeJournal({ sessionId }: NarrativeJournalProps) {
     } finally {
       setIsAiGenerating(false);
     }
+  };
+
+  const handleStartEdit = (entry: NarrativeEntry) => {
+    setEditingEntryId(entry.id);
+    setEditingContent(entry.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntryId(null);
+    setEditingContent("");
+  };
+
+  const handleSaveEdit = (entry: NarrativeEntry) => {
+    if (!editingContent.trim()) return;
+    updateEntryMutation.mutate({
+      id: entry.id,
+      content: editingContent,
+      entryType: entry.entryType || "note",
+    });
   };
 
   const getEntryTypeIcon = (type: string) => {
@@ -244,22 +288,71 @@ export function NarrativeJournal({ sessionId }: NarrativeJournalProps) {
                             </Badge>
                           )}
                         </div>
-                        <Button
-                          onClick={() => deleteEntryMutation.mutate(entry.id)}
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 text-blood-burgundy hover:bg-blood-burgundy/10"
-                          data-testid={`button-delete-entry-${entry.id}`}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex gap-1">
+                          {editingEntryId !== entry.id && (
+                            <Button
+                              onClick={() => handleStartEdit(entry)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 text-aged-gold hover:bg-aged-gold/10"
+                              data-testid={`button-edit-entry-${entry.id}`}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => deleteEntryMutation.mutate(entry.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-blood-burgundy hover:bg-blood-burgundy/10"
+                            data-testid={`button-delete-entry-${entry.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-bone-white text-sm whitespace-pre-wrap" data-testid={`text-entry-content-${entry.id}`}>
-                        {entry.content}
-                      </p>
-                      <p className="text-xs text-aged-parchment/60 mt-2">
-                        {entry.createdAt && format(new Date(entry.createdAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
-                      </p>
+                      
+                      {editingEntryId === entry.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="min-h-[80px] bg-charcoal border-aged-gold text-bone-white"
+                            data-testid={`textarea-edit-entry-${entry.id}`}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleSaveEdit(entry)}
+                              disabled={!editingContent.trim() || updateEntryMutation.isPending}
+                              size="sm"
+                              className="bg-aged-gold text-cosmic-void hover:bg-aged-gold/80"
+                              data-testid={`button-save-edit-${entry.id}`}
+                            >
+                              <Save className="h-3 w-3 mr-1" />
+                              {updateEntryMutation.isPending ? "Sauvegarde..." : "Sauvegarder"}
+                            </Button>
+                            <Button
+                              onClick={handleCancelEdit}
+                              size="sm"
+                              variant="outline"
+                              className="border-aged-parchment text-aged-parchment"
+                              data-testid={`button-cancel-edit-${entry.id}`}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Annuler
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-bone-white text-sm whitespace-pre-wrap" data-testid={`text-entry-content-${entry.id}`}>
+                            {entry.content}
+                          </p>
+                          <p className="text-xs text-aged-parchment/60 mt-2">
+                            {entry.createdAt && format(new Date(entry.createdAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
+                          </p>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
