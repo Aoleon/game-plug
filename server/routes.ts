@@ -1338,8 +1338,14 @@ export async function registerRoutes(app: Express): Promise<void> {
           await storage.addInventoryItem({
             characterId: importedCharacter.id,
             name: item.name,
-            quantity: item.quantity,
-            description: item.description || undefined
+            category: item.category,
+            description: item.description || undefined,
+            quantity: item.quantity || 1,
+            weight: item.weight || 1,
+            isEquipped: item.isEquipped || false,
+            damage: item.damage || undefined,
+            armor: item.armor || undefined,
+            properties: item.properties || {}
           });
         }
       }
