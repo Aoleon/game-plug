@@ -1342,12 +1342,12 @@ export async function registerRoutes(app: Express): Promise<void> {
             name: item.name,
             category: item.category,
             description: item.description || undefined,
-            quantity: item.quantity || 1,
-            weight: item.weight || 1,
-            isEquipped: item.isEquipped || false,
+            quantity: item.quantity ?? 1,
+            weight: item.weight ?? 1,
+            isEquipped: item.isEquipped ?? false,
             damage: item.damage || undefined,
             armor: item.armor || undefined,
-            properties: item.properties || {}
+            properties: (item.properties as any) || {}
           });
         }
       }
