@@ -17,6 +17,7 @@ const GMDashboardSimplified = lazy(() => import("@/pages/gm-dashboard-simplified
 const GameBoard = lazy(() => import("@/pages/gameboard"));
 const SessionManager = lazy(() => import("@/pages/session-manager"));
 const JoinSession = lazy(() => import("@/pages/join-session"));
+const JoinWithCode = lazy(() => import("@/pages/join-with-code"));
 const SelectCharacter = lazy(() => import("@/pages/select-character"));
 const GMSignup = lazy(() => import("@/pages/gm-signup"));
 const GMLogin = lazy(() => import("@/pages/gm-login"));
@@ -42,6 +43,7 @@ function Router() {
       <Switch>
         {/* Public routes - always accessible */}
         <Route path="/join" component={JoinSession} />
+        <Route path="/join/:code" component={JoinWithCode} />
         <Route path="/gm-signup" component={GMSignup} />
         <Route path="/gm-login" component={GMLogin} />
         <Route path="/session/:sessionId/select-character" component={SelectCharacter} />
