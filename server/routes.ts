@@ -1036,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post('/api/sessions/:sessionId/import-character', isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = req.params.sessionId;
-      const { characterId } = req.body;
+      const { characterId, resetState = true } = req.body;
       const userId = req.user.claims.sub;
       
       if (!characterId) {
@@ -1083,12 +1083,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         education: sourceCharacter.education,
         luck: sourceCharacter.luck,
         
-        // Reset derived stats to maximum for fresh start
-        hitPoints: sourceCharacter.maxHitPoints,
+        // Apply state based on resetState parameter
+        hitPoints: resetState ? sourceCharacter.maxHitPoints : sourceCharacter.hitPoints,
         maxHitPoints: sourceCharacter.maxHitPoints,
-        sanity: sourceCharacter.maxSanity,
+        sanity: resetState ? sourceCharacter.maxSanity : sourceCharacter.sanity,
         maxSanity: sourceCharacter.maxSanity,
-        magicPoints: sourceCharacter.maxMagicPoints,
+        magicPoints: resetState ? sourceCharacter.maxMagicPoints : sourceCharacter.magicPoints,
         maxMagicPoints: sourceCharacter.maxMagicPoints,
         
         // Copy avatar
@@ -1098,16 +1098,59 @@ export async function registerRoutes(app: Express): Promise<void> {
         // Copy skills
         skills: sourceCharacter.skills,
         skillsLocked: sourceCharacter.skillsLocked || false,
-        availableSkillPoints: 0,
+        availableSkillPoints: resetState ? 0 : (sourceCharacter.availableSkillPoints || 0),
         
-        // Reset progress-related fields
-        notes: undefined,
-        money: '0.00'
+        // Handle progress-related fields based on resetState
+        notes: resetState ? undefined : sourceCharacter.notes,
+        money: resetState ? '0.00' : sourceCharacter.money
       });
+      
+      // If not resetting state, also copy sanity conditions and active effects
+      if (!resetState) {
+        // Copy sanity conditions
+        const sanityConditions = await storage.getCharacterSanityConditions(characterId);
+        for (const condition of sanityConditions) {
+          await storage.addSanityCondition({
+            characterId: importedCharacter.id,
+            type: condition.type,
+            name: condition.name,
+            description: condition.description || undefined,
+            duration: condition.duration || undefined,
+            isActive: condition.isActive
+          });
+        }
+        
+        // Copy active effects
+        const activeEffects = await storage.getCharacterActiveEffects(characterId);
+        for (const effect of activeEffects) {
+          await storage.addActiveEffect({
+            characterId: importedCharacter.id,
+            appliedBy: effect.appliedBy || undefined,
+            type: effect.type,
+            name: effect.name,
+            description: effect.description || undefined,
+            value: effect.value || undefined,
+            duration: effect.duration || undefined,
+            isActive: effect.isActive
+          });
+        }
+        
+        // Copy inventory items
+        const inventoryItems = await storage.getCharacterInventory(characterId);
+        for (const item of inventoryItems) {
+          await storage.addInventoryItem({
+            characterId: importedCharacter.id,
+            name: item.name,
+            quantity: item.quantity,
+            description: item.description || undefined
+          });
+        }
+      }
       
       res.json({
         message: "Character imported successfully",
-        character: importedCharacter
+        character: importedCharacter,
+        resetState
       });
     } catch (error) {
       console.error("Error importing character:", error);

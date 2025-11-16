@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Download, User, Briefcase, Calendar } from "lucide-react";
+import { Download, User, Briefcase, Calendar, RefreshCw, Save } from "lucide-react";
 import type { Character } from "@shared/schema";
 
 interface ImportableCharacter extends Character {
@@ -23,6 +25,7 @@ interface ImportCharacterDialogProps {
 export default function ImportCharacterDialog({ open, onOpenChange, sessionId }: ImportCharacterDialogProps) {
   const { toast } = useToast();
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [resetState, setResetState] = useState<boolean>(true);
 
   const { data: importableCharacters = [], isLoading } = useQuery<ImportableCharacter[]>({
     queryKey: ["/api/sessions", sessionId, "importable-characters"],
@@ -30,9 +33,10 @@ export default function ImportCharacterDialog({ open, onOpenChange, sessionId }:
   });
 
   const importCharacterMutation = useMutation({
-    mutationFn: async (characterId: string) => {
+    mutationFn: async ({ characterId, resetState }: { characterId: string; resetState: boolean }) => {
       const response = await apiRequest("POST", `/api/sessions/${sessionId}/import-character`, {
-        characterId
+        characterId,
+        resetState
       });
       return response.json();
     },
@@ -56,7 +60,7 @@ export default function ImportCharacterDialog({ open, onOpenChange, sessionId }:
 
   const handleImport = () => {
     if (selectedCharacterId) {
-      importCharacterMutation.mutate(selectedCharacterId);
+      importCharacterMutation.mutate({ characterId: selectedCharacterId, resetState });
     }
   };
 
@@ -69,9 +73,47 @@ export default function ImportCharacterDialog({ open, onOpenChange, sessionId }:
           </DialogTitle>
           <DialogDescription className="text-aged-parchment">
             Sélectionnez un personnage depuis vos autres sessions pour l'importer dans cette session.
-            Les statistiques et compétences seront copiées, mais l'historique sera réinitialisé.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Import State Option */}
+        <div className="bg-cosmic-void border border-aged-gold rounded-lg p-4 mt-4">
+          <h3 className="font-cinzel text-aged-gold mb-3 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Options d'import
+          </h3>
+          <RadioGroup
+            value={resetState ? "reset" : "keep"}
+            onValueChange={(value) => setResetState(value === "reset")}
+            className="space-y-3"
+          >
+            <div className="flex items-start space-x-3 p-3 rounded border border-aged-gold/30 hover:border-aged-gold transition-colors">
+              <RadioGroupItem value="reset" id="reset" className="mt-1" data-testid="radio-reset-state" />
+              <div className="flex-1">
+                <Label htmlFor="reset" className="font-cinzel text-aged-gold cursor-pointer flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Réinitialiser l'état
+                </Label>
+                <p className="text-sm text-aged-parchment opacity-80 mt-1">
+                  PV, Santé mentale et PM remis au maximum. Inventaire, notes et historique effacés.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 rounded border border-aged-gold/30 hover:border-aged-gold transition-colors">
+              <RadioGroupItem value="keep" id="keep" className="mt-1" data-testid="radio-keep-state" />
+              <div className="flex-1">
+                <Label htmlFor="keep" className="font-cinzel text-aged-gold cursor-pointer flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Conserver l'état
+                </Label>
+                <p className="text-sm text-aged-parchment opacity-80 mt-1">
+                  Copie complète : PV, Santé, inventaire, effets actifs, conditions et notes.
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
+        </div>
 
         <div className="space-y-4 mt-4">
           {isLoading ? (
