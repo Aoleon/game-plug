@@ -40,6 +40,11 @@ Preferred communication style: Simple, everyday language.
 - **WebSocket Integration**: Live session updates for GM dashboard and player interactions
 - **Roll Broadcasting**: Real-time dice roll sharing between GM and players
 - **Session Management**: Live player status updates and session state synchronization
+- **Visual Projection System**: GM-controlled image projection to gameboard via WebSocket
+  - Floating button on GM dashboard opens projection dialog
+  - AI image generation, URL loading, and projection clearing capabilities
+  - Real-time sync to public gameboard display (no authentication required)
+  - Gameboard displays projections only (no generation controls)
 
 # External Dependencies
 
