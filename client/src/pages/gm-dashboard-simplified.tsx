@@ -23,13 +23,14 @@ import { rollDice } from "@/lib/dice";
 import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Users, Copy, QrCode, Share2, Settings, Package,
-  Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor
+  Dice6, Music, BookOpen, Image, Trash2, Plus, Monitor, Download
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import CharacterInventoryManager from "@/components/character-inventory-manager";
 import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import NarrativeTools from "@/components/narrative-tools";
+import ImportCharacterDialog from "@/components/import-character-dialog";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -53,6 +54,7 @@ export default function GMDashboardSimplified() {
   const [deleteCharacterId, setDeleteCharacterId] = useState<string | null>(null);
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   
   // WebSocket connection
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -321,8 +323,20 @@ export default function GMDashboardSimplified() {
             
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => setShowImportDialog(true)}
+              className="border-eldritch-green text-eldritch-green hover:bg-eldritch-green hover:text-deep-black"
+              data-testid="button-import-character"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Importer
+            </Button>
+            
+            <Button
+              size="sm"
               onClick={() => setLocation(`/character-creation/${sessionId}`)}
               className="bg-eldritch-green hover:bg-green-700 text-bone-white"
+              data-testid="button-create-character"
             >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Personnage
@@ -556,6 +570,15 @@ export default function GMDashboardSimplified() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Character Dialog */}
+      {sessionId && (
+        <ImportCharacterDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          sessionId={sessionId}
+        />
+      )}
     </div>
   );
 }
