@@ -15,8 +15,10 @@ import {
   insertRollHistorySchema,
   insertChapterSchema,
   insertInventorySchema,
+  insertNarrativeEntrySchema,
   gmSignupSchema,
   localLoginSchema,
+  type InsertNarrativeEntry,
 } from "@shared/schema";
 import { AuthService } from "./auth-service";
 import { z } from "zod";
@@ -803,7 +805,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Only allow updating specific fields - NEVER gmId or sessionId
-      const updateData: Partial<typeof existingEntry> = {
+      const updateData: Partial<InsertNarrativeEntry> = {
         content: content.trim(),
       };
       
@@ -812,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       if (metadata !== undefined) {
-        updateData.metadata = metadata;
+        updateData.metadata = metadata as any;
       }
       
       if (isAiGenerated !== undefined) {
@@ -1273,7 +1275,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         avatarPrompt: sourceCharacter.avatarPrompt || undefined,
         
         // Copy skills
-        skills: sourceCharacter.skills,
+        skills: sourceCharacter.skills as any,
         skillsLocked: sourceCharacter.skillsLocked || false,
         availableSkillPoints: resetState ? 0 : (sourceCharacter.availableSkillPoints || 0),
         
