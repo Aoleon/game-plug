@@ -8,6 +8,7 @@ import {
   activeEffects,
   rollHistory,
   inventory,
+  narrativeEntries,
   type User,
   type UpsertUser,
   type GameSession,
@@ -26,6 +27,8 @@ import {
   type InsertRollHistory,
   type InventoryItem,
   type InsertInventoryItem,
+  type NarrativeEntry,
+  type InsertNarrativeEntry,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -88,6 +91,11 @@ export interface IStorage {
   updateInventoryItem(id: string, data: Partial<InsertInventoryItem>): Promise<InventoryItem>;
   deleteInventoryItem(id: string): Promise<void>;
   equipItem(id: string, isEquipped: boolean): Promise<InventoryItem>;
+  
+  // Narrative entry operations
+  createNarrativeEntry(entry: InsertNarrativeEntry): Promise<NarrativeEntry>;
+  getSessionNarrativeEntries(sessionId: string): Promise<NarrativeEntry[]>;
+  deleteNarrativeEntry(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -453,6 +461,27 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inventory.id, id))
       .returning();
     return item;
+  }
+  
+  // Narrative entry operations
+  async createNarrativeEntry(entry: InsertNarrativeEntry): Promise<NarrativeEntry> {
+    const [narrativeEntry] = await db
+      .insert(narrativeEntries)
+      .values(entry)
+      .returning();
+    return narrativeEntry;
+  }
+  
+  async getSessionNarrativeEntries(sessionId: string): Promise<NarrativeEntry[]> {
+    return await db
+      .select()
+      .from(narrativeEntries)
+      .where(eq(narrativeEntries.sessionId, sessionId))
+      .orderBy(desc(narrativeEntries.createdAt));
+  }
+  
+  async deleteNarrativeEntry(id: string): Promise<void> {
+    await db.delete(narrativeEntries).where(eq(narrativeEntries.id, id));
   }
 }
 

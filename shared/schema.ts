@@ -190,6 +190,19 @@ export const rollHistory = pgTable("roll_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Narrative entries - GM's narrative journal for session
+export const narrativeEntries = pgTable("narrative_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => gameSessions.id),
+  gmId: varchar("gm_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  entryType: varchar("entry_type").default('note'), // 'note', 'event', 'npc', 'location', 'clue'
+  isAiGenerated: boolean("is_ai_generated").default(false),
+  metadata: jsonb("metadata").default('{}'), // For additional data like related characters, locations, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   characters: many(characters),
@@ -204,6 +217,7 @@ export const gameSessionsRelations = relations(gameSessions, ({ one, many }) => 
   }),
   characters: many(characters),
   chapters: many(chapters),
+  narrativeEntries: many(narrativeEntries),
 }));
 
 export const chaptersRelations = relations(chapters, ({ one, many }) => ({
@@ -288,6 +302,17 @@ export const rollHistoryRelations = relations(rollHistory, ({ one }) => ({
   }),
 }));
 
+export const narrativeEntriesRelations = relations(narrativeEntries, ({ one }) => ({
+  session: one(gameSessions, {
+    fields: [narrativeEntries.sessionId],
+    references: [gameSessions.id],
+  }),
+  gm: one(users, {
+    fields: [narrativeEntries.gmId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -339,6 +364,12 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
   updatedAt: true,
 });
 
+export const insertNarrativeEntrySchema = createInsertSchema(narrativeEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Local signup schema for GMs
 export const gmSignupSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -372,3 +403,5 @@ export type ChapterEvent = typeof chapterEvents.$inferSelect;
 export type InsertChapterEvent = z.infer<typeof insertChapterEventSchema>;
 export type InventoryItem = typeof inventory.$inferSelect;
 export type InsertInventoryItem = z.infer<typeof insertInventorySchema>;
+export type NarrativeEntry = typeof narrativeEntries.$inferSelect;
+export type InsertNarrativeEntry = z.infer<typeof insertNarrativeEntrySchema>;
