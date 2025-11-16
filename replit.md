@@ -24,17 +24,19 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Custom Vite integration for HMR
 
 ## Database Design
-- **Schema**: Comprehensive Call of Cthulhu data model (users, sessions, characters, sanity, effects, roll history)
+- **Schema**: Comprehensive Call of Cthulhu data model (11 active tables: users, sessions, game_sessions, characters, inventory, active_effects, sanity_conditions, roll_history, narrative_entries, chapters, chapter_events)
 - **Relationships**: Proper foreign key relationships
 - **Session Storage**: PostgreSQL for authentication persistence
 - **Migrations**: Drizzle Kit for schema management
+- **Database Status**: Clean and synchronized with Drizzle schema (November 16, 2025 - removed 4 orphan columns and 10 obsolete tables)
 
 ## Game Logic Implementation
-- **Character Creation**: 7th Edition rules, automatic characteristic generation, derived stats, and physical characteristics storage
-- **Character Import**: GMs can import characters, copying core data while resetting ephemeral stats
+- **Character Creation**: 7th Edition rules, automatic characteristic generation, derived stats, and physical characteristics storage (height, build, hairColor, eyeColor stored in dedicated columns)
+- **Character Import**: GMs can import characters with full data preservation (physical characteristics, complete inventory with all fields including category, weight, isEquipped, damage, armor, properties)
 - **Dice System**: Custom dice rolling engine supporting Call of Cthulhu mechanics
 - **Sanity System**: Full sanity tracking including phobias, manias, and temporary insanity
 - **Skills Management**: Occupation-based starting values and advancement tracking
+- **Inventory System**: Complete item management with categories, equipment status, weight, damage, armor, and custom properties
 
 ## Real-time Features
 - **WebSocket Integration**: Live session updates and roll broadcasting
