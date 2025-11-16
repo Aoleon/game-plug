@@ -52,7 +52,7 @@ export default function GameBoard() {
   const { data: characters = [] } = useQuery<CharacterWithDetails[]>({
     queryKey: ["/api/sessions", sessionId, "characters"],
     enabled: !!sessionId,
-    refetchInterval: 2000, // Refresh every 2s for real-time feel
+    // No polling needed - WebSocket provides real-time updates via invalidateQueries
   });
 
   // WebSocket setup
