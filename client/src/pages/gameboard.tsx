@@ -380,21 +380,31 @@ export default function GameBoard() {
               </p>
             </div>
           ) : projectionContent.type === 'image' ? (
-            <div className="h-full flex items-center justify-center p-4">
-              <div className="max-w-full max-h-full">
+            <div className="h-full flex flex-col items-center justify-center p-4">
+              <div className="flex-1 flex items-center justify-center max-w-full max-h-full">
                 <img
                   src={projectionContent.url}
-                  alt={projectionContent.description || "Projection"}
+                  alt="Projection"
                   className="max-w-full max-h-full object-contain rounded-lg shadow-2xl border border-aged-gold/30"
                 />
               </div>
               
-              {projectionContent.description && (
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-charcoal/90 border border-aged-gold/30 rounded-lg p-3 backdrop-blur-sm">
-                    <p className="text-aged-parchment text-center">
-                      {projectionContent.description}
-                    </p>
+              {(projectionContent.description || projectionContent.prompt) && (
+                <div className="w-full max-w-4xl mt-4 mb-2">
+                  <div className="bg-charcoal/95 border border-aged-gold/30 rounded-lg p-4 backdrop-blur-sm">
+                    {projectionContent.description && (
+                      <p className="text-aged-parchment text-center text-lg leading-relaxed">
+                        {projectionContent.description}
+                      </p>
+                    )}
+                    {projectionContent.prompt && projectionContent.description && (
+                      <div className="border-t border-aged-gold/20 my-2" />
+                    )}
+                    {projectionContent.prompt && (
+                      <p className="text-aged-parchment/70 text-center text-sm italic">
+                        Prompt : {projectionContent.prompt}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
