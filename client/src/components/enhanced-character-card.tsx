@@ -91,7 +91,7 @@ function EnhancedCharacterCard({
   return (
     <Card className={cn(
       "bg-charcoal border-aged-gold parchment-bg transition-all",
-      isCriticalCondition && "border-blood-burgundy animate-pulse",
+      isCriticalCondition && "border-blood-burgundy",
       isExpanded && "col-span-2"
     )}>
       <CardContent className="p-4">
@@ -113,7 +113,7 @@ function EnhancedCharacterCard({
             <div>
               <h3 className="font-cinzel text-lg text-aged-gold flex items-center gap-2" data-testid={`text-character-name-${character.id}`}>
                 {character.name}
-                {isCriticalCondition && <Skull className="h-4 w-4 text-blood-burgundy animate-pulse" />}
+                {isCriticalCondition && <Skull className="h-4 w-4 text-blood-burgundy" />}
               </h3>
               <p className="text-sm text-aged-parchment" data-testid={`text-character-occupation-${character.id}`}>{character.occupation}</p>
             </div>
