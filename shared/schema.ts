@@ -64,6 +64,12 @@ export const characters = pgTable("characters", {
   residence: varchar("residence"),
   gender: varchar("gender"),
   
+  // Physical characteristics
+  height: varchar("height"),
+  build: varchar("build"),
+  hairColor: varchar("hair_color"),
+  eyeColor: varchar("eye_color"),
+  
   // Core characteristics
   strength: integer("strength").notNull(),
   constitution: integer("constitution").notNull(),
