@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Game Logic Implementation
 - **Character Creation**: 7th Edition rules implementation with automatic characteristic generation and derived stat calculation
+- **Character Import**: GMs can import characters from their other sessions. Stats, skills, and avatars are copied while HP/Sanity/MP are reset to max and history is cleared (inventory, effects, conditions, roll history)
 - **Dice System**: Custom dice rolling engine supporting all Call of Cthulhu mechanics (1d100, damage dice, etc.)
 - **Sanity System**: Complete sanity tracking with phobias, manias, and temporary insanity effects
 - **Skills Management**: Full skill system with occupation-based starting values and advancement tracking
