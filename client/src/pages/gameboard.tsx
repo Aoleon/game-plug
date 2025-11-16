@@ -74,8 +74,8 @@ export default function GameBoard() {
           break;
         case 'projection_update':
           // Update projection content
-          if (lastMessage.data) {
-            setProjectionContent(lastMessage.data);
+          if (lastMessage.data && typeof lastMessage.data === 'object' && 'content' in lastMessage.data) {
+            setProjectionContent(lastMessage.data.content);
           }
           break;
       }
