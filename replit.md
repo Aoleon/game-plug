@@ -213,13 +213,32 @@ Every feature addition or update requires comprehensive testing across all appli
 
 ## Recent Updates & Testing Status
 
-### Latest Features Tested (January 2025)
-1. **Enhanced GM Dashboard**: Character-centric interface with integrated actions
-2. **Inventory Management**: Complete item catalog with quantity controls and money management
-3. **Skill Points System**: GM allocation and player distribution with validation
-4. **Enhanced Character Cards**: Expandable interface with all major actions integrated
+### Latest Features Tested (November 2025)
+1. **Dual Authentication System** (Nov 16): Complete OIDC + local auth support across all routes
+   - All 25+ backend routes converted to use `getUserId()` helper
+   - Signup flow robustified with deterministic cache updates
+   - End-to-end auth testing validated (signup, login, session creation)
+
+2. **QR Code Join Flow** (Nov 16): Fixed missing route for QR code-based session joining
+   - Added `/join/:code` route in App.tsx for automatic session joining
+   - Created `JoinWithCode` page for seamless QR code experience
+   - Players can now scan QR codes to auto-join sessions
+   - Complete flow: QR scan → /join/CODE → Auto-join → Character selection → Character sheet
+
+3. **Character Selection Enhancement** (Nov 16): Verified selection flow integrity
+   - Selection logic confirmed working correctly
+   - Player can select from existing session characters
+   - localStorage-based character tracking for session persistence
+
+4. **Enhanced GM Dashboard**: Character-centric interface with integrated actions
+5. **Inventory Management**: Complete item catalog with quantity controls and money management
+6. **Skill Points System**: GM allocation and player distribution with validation
+7. **Enhanced Character Cards**: Expandable interface with all major actions integrated
 
 ### Current Test Coverage
+- ✅ Dual authentication (OIDC + local) across all routes
+- ✅ QR code join flow and auto-redirect
+- ✅ Character selection and session joining
 - ✅ Backend API routes (character, inventory, session management)
 - ✅ Frontend component integration (cards, modals, forms)
 - ✅ Real-time WebSocket functionality
