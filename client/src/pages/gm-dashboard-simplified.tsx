@@ -31,6 +31,7 @@ import GMRollWithEffects from "@/components/gm-roll-with-effects";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import NarrativeTools from "@/components/narrative-tools";
 import ImportCharacterDialog from "@/components/import-character-dialog";
+import VisualProjectionDialog from "@/components/visual-projection-dialog";
 import type { Character, GameSession, SanityCondition, ActiveEffect } from "@shared/schema";
 
 interface CharacterWithDetails extends Character {
@@ -55,6 +56,7 @@ export default function GMDashboardSimplified() {
   const [deleteCharacterName, setDeleteCharacterName] = useState<string>("");
   const [isGeneratingAvatars, setIsGeneratingAvatars] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showProjectionDialog, setShowProjectionDialog] = useState(false);
   
   // WebSocket connection
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -579,6 +581,31 @@ export default function GMDashboardSimplified() {
           sessionId={sessionId}
         />
       )}
+
+      {/* Visual Projection Dialog */}
+      {sessionId && (
+        <VisualProjectionDialog
+          open={showProjectionDialog}
+          onOpenChange={setShowProjectionDialog}
+          sessionId={sessionId}
+        />
+      )}
+
+      {/* Floating Projection Button */}
+      <motion.div
+        className="fixed bottom-8 right-8 z-50"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
+      >
+        <Button
+          onClick={() => setShowProjectionDialog(true)}
+          className="h-16 w-16 rounded-full bg-eldritch-green hover:bg-green-700 text-bone-white shadow-lg shadow-eldritch-green/50 hover:shadow-xl hover:shadow-eldritch-green/70 transition-all"
+          data-testid="button-open-projection"
+        >
+          <Monitor className="h-6 w-6" />
+        </Button>
+      </motion.div>
     </div>
   );
 }
