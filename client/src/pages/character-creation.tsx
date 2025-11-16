@@ -521,6 +521,13 @@ export default function CharacterCreation() {
       birthplace: data.birthplace || "",
       residence: data.residence || "",
       gender: data.gender || "",
+      
+      // Physical characteristics
+      height: physicalTraits.height || undefined,
+      build: physicalTraits.build || undefined,
+      hairColor: physicalTraits.hairColor || undefined,
+      eyeColor: physicalTraits.eyeColor || undefined,
+      
       sessionId: finalSessionId,
       userId: "", // This will be set by the backend
       
