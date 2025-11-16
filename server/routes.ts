@@ -993,6 +993,128 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Get importable characters (characters from GM's other sessions)
+  app.get('/api/sessions/:sessionId/importable-characters', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const userId = req.user.claims.sub;
+      
+      // Check if user is GM of this session
+      const session = await storage.getGameSession(sessionId);
+      if (!session || session.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can import characters" });
+      }
+      
+      // Get all sessions owned by this GM
+      const gmSessions = await storage.getGameSessionsByGM(userId);
+      
+      // Get all characters from GM's other sessions
+      const charactersPromises = gmSessions
+        .filter(s => s.id !== sessionId)
+        .map(s => storage.getCharactersBySession(s.id));
+      
+      const charactersArrays = await Promise.all(charactersPromises);
+      const allCharacters = charactersArrays.flat();
+      
+      // Include session name with each character for context
+      const charactersWithSessionInfo = allCharacters.map(char => {
+        const charSession = gmSessions.find(s => s.id === char.sessionId);
+        return {
+          ...char,
+          sessionName: charSession?.name || 'Unknown Session'
+        };
+      });
+      
+      res.json(charactersWithSessionInfo);
+    } catch (error) {
+      console.error("Error fetching importable characters:", error);
+      res.status(500).json({ message: "Failed to fetch importable characters" });
+    }
+  });
+
+  // Import character into session (creates a copy)
+  app.post('/api/sessions/:sessionId/import-character', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const { characterId } = req.body;
+      const userId = req.user.claims.sub;
+      
+      if (!characterId) {
+        return res.status(400).json({ message: "Character ID is required" });
+      }
+      
+      // Check if user is GM of target session
+      const targetSession = await storage.getGameSession(sessionId);
+      if (!targetSession || targetSession.gmId !== userId) {
+        return res.status(403).json({ message: "Only the GM can import characters" });
+      }
+      
+      // Get source character
+      const sourceCharacter = await storage.getCharacter(characterId);
+      if (!sourceCharacter) {
+        return res.status(404).json({ message: "Source character not found" });
+      }
+      
+      // Verify source session belongs to same GM
+      const sourceSession = await storage.getGameSession(sourceCharacter.sessionId);
+      if (!sourceSession || sourceSession.gmId !== userId) {
+        return res.status(403).json({ message: "You can only import characters from your own sessions" });
+      }
+      
+      // Create copy of character in new session
+      const importedCharacter = await storage.createCharacter({
+        name: sourceCharacter.name,
+        occupation: sourceCharacter.occupation,
+        age: sourceCharacter.age || undefined,
+        birthplace: sourceCharacter.birthplace || undefined,
+        residence: sourceCharacter.residence || undefined,
+        gender: sourceCharacter.gender || undefined,
+        sessionId: sessionId,
+        userId: sourceCharacter.userId || undefined,
+        
+        // Copy all characteristics
+        strength: sourceCharacter.strength,
+        constitution: sourceCharacter.constitution,
+        size: sourceCharacter.size,
+        dexterity: sourceCharacter.dexterity,
+        appearance: sourceCharacter.appearance,
+        intelligence: sourceCharacter.intelligence,
+        power: sourceCharacter.power,
+        education: sourceCharacter.education,
+        luck: sourceCharacter.luck,
+        
+        // Copy derived stats
+        hitPoints: sourceCharacter.hitPoints,
+        maxHitPoints: sourceCharacter.maxHitPoints,
+        sanity: sourceCharacter.sanity,
+        maxSanity: sourceCharacter.maxSanity,
+        magicPoints: sourceCharacter.magicPoints,
+        maxMagicPoints: sourceCharacter.maxMagicPoints,
+        
+        // Copy avatar
+        avatarUrl: sourceCharacter.avatarUrl || undefined,
+        avatarPrompt: sourceCharacter.avatarPrompt || undefined,
+        
+        // Copy skills
+        skills: sourceCharacter.skills,
+        skillsLocked: sourceCharacter.skillsLocked || false,
+        availableSkillPoints: 0,
+        
+        // Reset progress-related fields
+        notes: undefined,
+        money: '0.00'
+      });
+      
+      res.json({
+        message: "Character imported successfully",
+        character: importedCharacter
+      });
+    } catch (error) {
+      console.error("Error importing character:", error);
+      res.status(500).json({ message: "Failed to import character" });
+    }
+  });
+
   // Grant skill points to character (GM only)
   app.post('/api/characters/:id/skill-points', isAuthenticated, async (req: any, res) => {
     const characterId = req.params.id;
