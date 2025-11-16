@@ -15,6 +15,7 @@ import NarrativeTools from "@/components/narrative-tools";
 import UnifiedAmbientController from "@/components/unified-ambient-controller";
 import { ChapterManagerWithHistory } from "@/components/chapter-manager";
 import CharacterInventoryDisplay from "@/components/character-inventory-display";
+import VisualProjectionDialog from "@/components/visual-projection-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ import { useDiceSound } from "@/components/dice-sound-manager";
 import { 
   Eye, EyeOff, Dice6, Heart, Brain, Plus, Minus, Wand2, 
   Users, Clock, AlertTriangle, BookOpen, QrCode, Copy, Share2, CheckCircle, Trash2, Edit, Image,
-  Package, Search, Filter, ShoppingBag, X
+  Package, Search, Filter, ShoppingBag, X, Monitor
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { PREDEFINED_ITEMS, filterItems, getUniqueTags, type PredefinedItem } from "@/lib/predefined-items";
@@ -72,6 +73,9 @@ export default function GMDashboard() {
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryCategory, setInventoryCategory] = useState<string>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  // Visual projection states
+  const [projectionDialogOpen, setProjectionDialogOpen] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -1651,6 +1655,25 @@ export default function GMDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Visual Projection Dialog */}
+        <VisualProjectionDialog
+          open={projectionDialogOpen}
+          onOpenChange={setProjectionDialogOpen}
+          sessionId={sessionId}
+        />
+
+        {/* Floating Projection Button */}
+        <div className="fixed bottom-8 right-8 z-50">
+          <Button
+            size="lg"
+            onClick={() => setProjectionDialogOpen(true)}
+            className="bg-aged-gold text-deep-black hover:bg-bone-white shadow-2xl h-16 w-16 rounded-full p-0 eldritch-glow"
+            data-testid="button-floating-projection"
+          >
+            <Monitor className="h-8 w-8" />
+          </Button>
+        </div>
       </div>
     </div>
   );

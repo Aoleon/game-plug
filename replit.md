@@ -224,16 +224,28 @@ Every feature addition or update requires comprehensive testing across all appli
    - Created `JoinWithCode` page for seamless QR code experience
    - Players can now scan QR codes to auto-join sessions
    - Complete flow: QR scan → /join/CODE → Auto-join → Character selection → Character sheet
+   - End-to-end player access validated: QR join → Character selection → Full character sheet access
 
-3. **Character Selection Enhancement** (Nov 16): Verified selection flow integrity
-   - Selection logic confirmed working correctly
-   - Player can select from existing session characters
-   - localStorage-based character tracking for session persistence
+3. **Visual Projection System** (Nov 16): Integrated floating button for gameboard image management
+   - Added floating projection button in GM dashboard (bottom-right, circular gold button with Monitor icon)
+   - Integrated VisualProjectionDialog component with 3 control tabs
+   - AI Generation: Create scenes with DALL-E prompts and project to gameboard
+   - URL Loading: Load images from external URLs for instant projection
+   - Control Panel: Clear projections with single click
+   - Real-time WebSocket synchronization to gameboard display
+   - Complete GM-to-gameboard projection workflow operational
 
-4. **Enhanced GM Dashboard**: Character-centric interface with integrated actions
-5. **Inventory Management**: Complete item catalog with quantity controls and money management
-6. **Skill Points System**: GM allocation and player distribution with validation
-7. **Enhanced Character Cards**: Expandable interface with all major actions integrated
+4. **UI Polish** (Nov 16): Removed distracting pulse animations from critical character states
+   - Removed animate-pulse from character-card.tsx sanity status
+   - Removed animate-pulse from enhanced-character-card.tsx (card border & Skull icon)
+   - Removed animate-pulse from gameboard.tsx (Skull icon & sanity progress bar)
+   - Removed animate-pulse from character-sheet.tsx (HP & sanity borders)
+   - Critical states now use solid visual indicators (colors, icons) for better readability
+
+5. **Enhanced GM Dashboard**: Character-centric interface with integrated actions
+6. **Inventory Management**: Complete item catalog with quantity controls and money management
+7. **Skill Points System**: GM allocation and player distribution with validation
+8. **Enhanced Character Cards**: Expandable interface with all major actions integrated
 
 ### Current Test Coverage
 - ✅ Dual authentication (OIDC + local) across all routes
