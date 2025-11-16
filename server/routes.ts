@@ -1083,12 +1083,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         education: sourceCharacter.education,
         luck: sourceCharacter.luck,
         
-        // Copy derived stats
-        hitPoints: sourceCharacter.hitPoints,
+        // Reset derived stats to maximum for fresh start
+        hitPoints: sourceCharacter.maxHitPoints,
         maxHitPoints: sourceCharacter.maxHitPoints,
-        sanity: sourceCharacter.sanity,
+        sanity: sourceCharacter.maxSanity,
         maxSanity: sourceCharacter.maxSanity,
-        magicPoints: sourceCharacter.magicPoints,
+        magicPoints: sourceCharacter.maxMagicPoints,
         maxMagicPoints: sourceCharacter.maxMagicPoints,
         
         // Copy avatar
