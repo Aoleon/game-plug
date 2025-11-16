@@ -178,11 +178,12 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.patch('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const session = await storage.getGameSession(req.params.id);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
-      if (session.gmId !== req.user.claims.sub) {
+      if (session.gmId !== userId) {
         return res.status(403).json({ message: "Not authorized" });
       }
       const updatedSession = await storage.updateGameSession(req.params.id, req.body);
@@ -195,11 +196,12 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.delete('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const session = await storage.getGameSession(req.params.id);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
-      if (session.gmId !== req.user.claims.sub) {
+      if (session.gmId !== userId) {
         return res.status(403).json({ message: "Not authorized" });
       }
       await storage.deleteGameSession(req.params.id);
@@ -235,11 +237,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Chapter routes (GM only)
   app.post('/api/sessions/:sessionId/chapters', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const session = await storage.getGameSession(req.params.sessionId);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
-      if (session.gmId !== req.user.claims.sub) {
+      if (session.gmId !== userId) {
         return res.status(403).json({ message: "Not authorized" });
       }
       
@@ -267,13 +270,14 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.patch('/api/chapters/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const chapter = await storage.getChapter(req.params.id);
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
       
       const session = await storage.getGameSession(chapter.sessionId);
-      if (!session || session.gmId !== req.user.claims.sub) {
+      if (!session || session.gmId !== userId) {
         return res.status(403).json({ message: "Not authorized" });
       }
       
@@ -287,13 +291,14 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.delete('/api/chapters/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const chapter = await storage.getChapter(req.params.id);
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
       
       const session = await storage.getGameSession(chapter.sessionId);
-      if (!session || session.gmId !== req.user.claims.sub) {
+      if (!session || session.gmId !== userId) {
         return res.status(403).json({ message: "Not authorized" });
       }
       
@@ -308,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Chapter Events Routes
   app.post('/api/chapter-events', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const eventData = {
         ...req.body,
         userId,
@@ -375,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post('/api/characters', async (req: any, res) => {
     try {
       // For players without auth, userId can be null
-      const userId = req.user?.claims?.sub || null;
+      const userId = req.user ? getUserId(req) : null;
       let { sessionId } = req.body;
       
       // Handle temporary session IDs or create a default session
@@ -398,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           }
         } else {
           // For unauthenticated users, use or create a public session
-          const publicSessions = await storage.getGameSessionsByGM(req.user?.claims?.sub || "21448396"); // Use current user or test user ID
+          const publicSessions = await storage.getGameSessionsByGM(userId || "21448396"); // Use current user or test user ID
           
           if (publicSessions.length === 0) {
             // Cannot create session without valid GM ID
@@ -424,9 +429,10 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.get('/api/characters', async (req: any, res) => {
+  app.get('/api/characters', isAuthenticated, async (req: any, res) => {
     try {
-      const characters = await storage.getCharactersByUser(req.user.claims.sub);
+      const userId = getUserId(req);
+      const characters = await storage.getCharactersByUser(userId);
       res.json(characters);
     } catch (error) {
       console.error("Error fetching characters:", error);
@@ -455,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   app.patch('/api/characters/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const updateData = req.body;
       
       // Get the character to check if skills are locked
@@ -511,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update character notes
   app.patch('/api/characters/:id/notes', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { notes } = req.body;
       const characterId = req.params.id;
       
@@ -554,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Add item to inventory
   app.post('/api/characters/:id/inventory', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const characterId = req.params.id;
       
       // Check if user is GM or owns the character
@@ -586,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update inventory item
   app.patch('/api/inventory/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const itemId = req.params.id;
       
       // Get item to check ownership
@@ -638,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Update inventory item quantity from character path (for GM)
   app.patch('/api/characters/:characterId/inventory/:itemId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { characterId, itemId } = req.params;
       const { quantity } = req.body;
       
@@ -667,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Delete inventory item from character path (for GM)
   app.delete('/api/characters/:characterId/inventory/:itemId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const { characterId, itemId } = req.params;
       
       // Check if user is GM
@@ -850,6 +856,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // GameBoard scene generation endpoint
   app.post('/api/gameboard/generate-scene', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const { prompt, sessionId } = req.body;
       
       if (!prompt) {
@@ -858,7 +865,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Verify GM access to session
       const session = await storage.getGameSession(sessionId);
-      if (!session || session.gmId !== req.user.claims.sub) {
+      if (!session || session.gmId !== userId) {
         return res.status(403).json({ message: "Permission denied" });
       }
 
@@ -967,7 +974,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post('/api/sessions/:sessionId/generate-all-avatars', isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = req.params.sessionId;
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const { forceRegenerate = false } = req.body;
       
       // Check if user is GM
@@ -1128,12 +1135,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Delete character from session (GM only)
   app.delete('/api/sessions/:sessionId/characters/:characterId', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       // Check if GM owns this session
       const session = await storage.getGameSession(req.params.sessionId);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
-      if (session.gmId !== req.user.claims.sub) {
+      if (session.gmId !== userId) {
         return res.status(403).json({ message: "Only the GM can remove players from the session" });
       }
       
@@ -1160,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get('/api/sessions/:sessionId/importable-characters', isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = req.params.sessionId;
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       
       // Check if user is GM of this session
       const session = await storage.getGameSession(sessionId);
@@ -1200,7 +1208,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const sessionId = req.params.sessionId;
       const { characterId, resetState = true } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       
       if (!characterId) {
         return res.status(400).json({ message: "Character ID is required" });
@@ -1356,8 +1364,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Check if user is GM of the session
+      const userId = getUserId(req);
       const session = await storage.getGameSession(character.sessionId);
-      if (!session || session.gmId !== req.user?.claims?.sub) {
+      if (!session || session.gmId !== userId) {
         return res.status(403).json({ message: "Only the GM can grant skill points" });
       }
       
@@ -1390,8 +1399,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Check if user owns the character or is GM
+      const userId = getUserId(req);
       const session = await storage.getGameSession(character.sessionId);
-      if (character.userId !== req.user?.claims?.sub && session?.gmId !== req.user?.claims?.sub) {
+      if (character.userId !== userId && session?.gmId !== userId) {
         return res.status(403).json({ message: "Unauthorized to modify this character" });
       }
       
@@ -1432,10 +1442,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Active effect routes
   app.post('/api/characters/:id/effects', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const effectData = insertActiveEffectSchema.parse({
         ...req.body,
         characterId: req.params.id,
-        appliedBy: req.user.claims.sub
+        appliedBy: userId
       });
       const effect = await storage.addActiveEffect(effectData);
       
@@ -1562,9 +1573,10 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Dice roll routes
   app.post('/api/rolls', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const rollData = insertRollHistorySchema.parse({
         ...req.body,
-        userId: req.user.claims.sub
+        userId: userId
       });
       const roll = await storage.addRollHistory(rollData);
       

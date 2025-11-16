@@ -31,10 +31,16 @@ export default function GMSignup() {
   });
 
   const signupMutation = useMutation({
-    mutationFn: (data: SignupForm) => apiRequest("POST", "/api/auth/signup", data),
-    onSuccess: async () => {
-      // Refetch auth state to ensure user is authenticated before navigating
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+    mutationFn: async (data: SignupForm) => {
+      const response = await apiRequest("POST", "/api/auth/signup", data);
+      return response;
+    },
+    onSuccess: async (signupResponse: any) => {
+      // Extract user object from signup response (signup returns { user: {...} })
+      const userData = signupResponse.user || signupResponse;
+      
+      // Immediately set the user data in the cache
+      queryClient.setQueryData(["/api/auth/user"], userData);
       
       toast({
         title: "Compte créé avec succès !",
@@ -42,10 +48,8 @@ export default function GMSignup() {
         variant: "default",
       });
       
-      // Navigate after a small delay to ensure auth state is updated
-      setTimeout(() => {
-        navigate("/");
-      }, 100);
+      // Navigate immediately - auth state is already updated
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({
