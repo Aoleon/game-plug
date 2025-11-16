@@ -364,3 +364,5 @@ export function NarrativeJournal({ sessionId }: NarrativeJournalProps) {
     </Card>
   );
 }
+
+export default NarrativeJournal;
