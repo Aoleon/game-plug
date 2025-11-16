@@ -34,7 +34,6 @@ interface ProjectionContent {
 export default function GameBoard() {
   const params = useParams();
   const sessionId = params.sessionId;
-  const { isAuthenticated } = useAuth();
   
   // WebSocket for real-time updates
   const { isConnected, sendMessage, lastMessage } = useWebSocket("/game-ws");
@@ -44,15 +43,15 @@ export default function GameBoard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPlayerList, setShowPlayerList] = useState(true);
 
-  // Data fetching
+  // Data fetching - no auth required for gameboard (public display)
   const { data: session } = useQuery<GameSession>({
     queryKey: ["/api/sessions", sessionId],
-    enabled: isAuthenticated && !!sessionId,
+    enabled: !!sessionId,
   });
 
   const { data: characters = [] } = useQuery<CharacterWithDetails[]>({
     queryKey: ["/api/sessions", sessionId, "characters"],
-    enabled: isAuthenticated && !!sessionId,
+    enabled: !!sessionId,
     refetchInterval: 2000, // Refresh every 2s for real-time feel
   });
 

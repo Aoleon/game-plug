@@ -48,6 +48,7 @@ function Router() {
         <Route path="/character/:id" component={CharacterSheet} />
         <Route path="/create-character" component={CharacterCreation} />
         <Route path="/character-creation" component={CharacterCreation} />
+        <Route path="/gm/:sessionId/gameboard" component={GameBoard} />
         
         {/* GM routes - require authentication */}
         {isLoading || !isAuthenticated ? (
@@ -56,7 +57,6 @@ function Router() {
           <>
             <Route path="/" component={Home} />
             <Route path="/gm/:sessionId" component={GMDashboardSimplified} />
-            <Route path="/gm/:sessionId/gameboard" component={GameBoard} />
             <Route path="/character-creation/:sessionId" component={CharacterCreation} />
             <Route path="/character-edit/:sessionId/:id" component={CharacterEdit} />
             <Route path="/sessions" component={SessionManager} />
