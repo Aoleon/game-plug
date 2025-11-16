@@ -3,6 +3,7 @@ import { broadcastToSession } from "./websocket";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage, generateNarrativeSuggestion } from "./openai";
+import { copyAvatar, avatarFileExists } from "./image-storage";
 import { migrateExistingAvatars } from "./migrate-avatars";
 import { applyAutomaticStatusEffects, calculateSanityLoss, applyTemporaryInsanity } from "./game-logic";
 import { applyHealing, applySanityRecovery, applyMagicRecovery, applyLuckBoost, applySkillBonus } from "./buff-logic";
@@ -1147,7 +1148,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(403).json({ message: "You can only import characters from your own sessions" });
       }
       
-      // Create copy of character in new session
+      // Create copy of character in new session (without avatar first)
       const importedCharacter = await storage.createCharacter({
         name: sourceCharacter.name,
         occupation: sourceCharacter.occupation,
@@ -1177,8 +1178,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         magicPoints: resetState ? sourceCharacter.maxMagicPoints : sourceCharacter.magicPoints,
         maxMagicPoints: sourceCharacter.maxMagicPoints,
         
-        // Copy avatar
-        avatarUrl: sourceCharacter.avatarUrl || undefined,
+        // Avatar will be set after copying the file
         avatarPrompt: sourceCharacter.avatarPrompt || undefined,
         
         // Copy skills
@@ -1190,6 +1190,26 @@ export async function registerRoutes(app: Express): Promise<void> {
         notes: resetState ? undefined : sourceCharacter.notes,
         money: resetState ? '0.00' : sourceCharacter.money
       });
+      
+      // Handle avatar copying - ensure the avatar file exists and copy it
+      if (sourceCharacter.avatarUrl) {
+        let newAvatarUrl: string | null = null;
+        
+        // Try to copy the existing avatar file
+        if (avatarFileExists(sourceCharacter.avatarUrl)) {
+          newAvatarUrl = copyAvatar(sourceCharacter.avatarUrl, importedCharacter.id);
+          console.log(`Avatar copied successfully for character ${importedCharacter.name}`);
+        } else {
+          console.log(`Source avatar file not found for ${sourceCharacter.name}, will regenerate if needed`);
+          // If avatar doesn't exist but we have a prompt, we could regenerate
+          // For now, we'll leave it null and let the frontend handle the placeholder
+        }
+        
+        // Update character with new avatar URL
+        if (newAvatarUrl) {
+          await storage.updateCharacter(importedCharacter.id, { avatarUrl: newAvatarUrl });
+        }
+      }
       
       // If not resetting state, also copy sanity conditions and active effects
       if (!resetState) {

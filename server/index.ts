@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupWebSocket } from "./websocket";
 import path from "path";
 import { autoMigrateAvatarsOnStartup } from "./auto-migrate";
+import { reconcileCharacterAvatars } from "./reconcile-avatars";
 
 const app = express();
 app.use(express.json());
@@ -82,6 +83,8 @@ app.use((req, res, next) => {
     }
     
     // Run avatar migration in background after server starts
-    autoMigrateAvatarsOnStartup().catch(console.error);
+    autoMigrateAvatarsOnStartup()
+      .then(() => reconcileCharacterAvatars())
+      .catch(console.error);
   });
 })();

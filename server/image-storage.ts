@@ -54,3 +54,51 @@ export async function deleteAvatar(avatarUrl: string): Promise<void> {
     console.error("Error deleting avatar:", error);
   }
 }
+
+export function avatarFileExists(avatarUrl: string): boolean {
+  try {
+    if (!avatarUrl || !avatarUrl.startsWith('/avatars/')) {
+      return false; // Not a local avatar URL
+    }
+
+    const filename = avatarUrl.replace('/avatars/', '');
+    const filepath = path.join(AVATARS_DIR, filename);
+
+    return fs.existsSync(filepath);
+  } catch (error) {
+    console.error("Error checking avatar existence:", error);
+    return false;
+  }
+}
+
+export function copyAvatar(sourceAvatarUrl: string, targetCharacterId: string): string | null {
+  try {
+    if (!sourceAvatarUrl || !sourceAvatarUrl.startsWith('/avatars/')) {
+      return null; // Not a local avatar URL
+    }
+
+    const sourceFilename = sourceAvatarUrl.replace('/avatars/', '');
+    const sourceFilepath = path.join(AVATARS_DIR, sourceFilename);
+
+    // Check if source file exists
+    if (!fs.existsSync(sourceFilepath)) {
+      console.error(`Source avatar not found: ${sourceFilepath}`);
+      return null;
+    }
+
+    // Generate new filename for target character
+    const timestamp = Date.now();
+    const hash = crypto.createHash('md5').update(`${targetCharacterId}-${timestamp}`).digest('hex').substring(0, 8);
+    const targetFilename = `avatar-${targetCharacterId}-${hash}.png`;
+    const targetFilepath = path.join(AVATARS_DIR, targetFilename);
+
+    // Copy file
+    fs.copyFileSync(sourceFilepath, targetFilepath);
+
+    // Return the new relative URL
+    return `/avatars/${targetFilename}`;
+  } catch (error) {
+    console.error("Error copying avatar:", error);
+    return null;
+  }
+}
