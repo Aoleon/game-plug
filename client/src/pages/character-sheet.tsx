@@ -562,7 +562,7 @@ export default function CharacterSheet() {
                 {/* Vital Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className={`text-center bg-cosmic-void rounded-lg p-3 border-2 ${
-                    character.hitPoints <= 2 ? 'border-red-600 animate-pulse' : 
+                    character.hitPoints <= 2 ? 'border-red-600' : 
                     character.hitPoints / character.maxHitPoints < 0.5 ? 'border-orange-500' :
                     character.hitPoints / character.maxHitPoints < 0.75 ? 'border-yellow-500' :
                     'border-transparent'
@@ -573,7 +573,7 @@ export default function CharacterSheet() {
                     <div className="text-xs text-aged-parchment">Points de Vie</div>
                   </div>
                   <div className={`text-center bg-cosmic-void rounded-lg p-3 border-2 ${
-                    character.sanity <= 0 ? 'border-purple-900 animate-pulse' :
+                    character.sanity <= 0 ? 'border-purple-900' :
                     character.sanity / character.maxSanity < 0.2 ? 'border-purple-600' :
                     character.sanity / character.maxSanity < 0.5 ? 'border-purple-400' :
                     'border-transparent'
