@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { broadcastToSession } from "./websocket";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { generateCharacterAvatar, generatePhobiaDescription, generateManiaDescription, generateSceneImage, generateNarrativeSuggestion } from "./openai";
 import { copyAvatar, avatarFileExists } from "./image-storage";
 import { migrateExistingAvatars } from "./migrate-avatars";
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims ? req.user.claims.sub : req.user.id;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -89,14 +89,14 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const loginData = localLoginSchema.parse(req.body);
       const user = await AuthService.authenticateLocal(loginData);
-      
+
       // Create session for the authenticated user
       (req.session as any).user = {
         id: user.id,
         email: user.email,
         authType: 'local'
       };
-      
+
       res.json({
         user: {
           id: user.id,
@@ -112,6 +112,18 @@ export async function registerRoutes(app: Express): Promise<void> {
       const message = error instanceof Error ? error.message : "Erreur lors de la connexion";
       res.status(401).json({ message });
     }
+  });
+
+  // Logout route
+  app.post('/api/auth/logout', (req, res) => {
+    (req.session as any).user = null;
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ message: "Erreur lors de la déconnexion" });
+      }
+      res.json({ message: "Déconnecté avec succès" });
+    });
   });
 
   // Public route to join a session with code
@@ -131,9 +143,9 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Helper to get userId from either OIDC or local auth
+  // Helper to get userId from local auth
   const getUserId = (req: any): string => {
-    return req.user.claims ? req.user.claims.sub : req.user.id;
+    return req.user.id;
   };
 
   // Game session routes
