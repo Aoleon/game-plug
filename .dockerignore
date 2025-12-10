@@ -1,0 +1,77 @@
+# Dependencies
+node_modules/
+.npm
+.pnpm-debug.log*
+.yarn.lock
+yarn-error.log*
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+
+# Build output (will be rebuilt)
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+CLAUDE.md
+OPTIMIZATIONS.md
+BUILD_ANALYSIS.md
+
+# Test files
+*test*.txt
+e2e-test*.txt
+ui-e2e-test*.txt
+test-summary.txt
+coverage/
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Replit-specific
+.replit
+replit.md
+replit.nix
+
+# Generated avatars (will be regenerated)
+public/avatars/
+
+# Attached assets
+attached_assets/
+
+# Cache
+.cache/
+.eslintcache

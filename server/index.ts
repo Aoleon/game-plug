@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
@@ -47,13 +48,23 @@ app.use((req, res, next) => {
 (async () => {
   // Create a single HTTP server
   const server = createServer(app);
-  
+
   // Setup WebSocket before routes
   setupWebSocket(server);
-  
+
   // Register routes (no longer creates its own server)
   await registerRoutes(app);
 
+  // In production, setup static file serving BEFORE starting the server
+  // This ensures the catch-all route is registered before error handler
+  const isProduction = app.get("env") !== "development";
+  if (isProduction) {
+    log("Setting up static file serving (production mode)");
+    serveStatic(app);
+    log("Static file serving configured");
+  }
+
+  // Error handler must be registered AFTER all routes and static file serving
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -73,15 +84,15 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    
-    // Setup Vite after server is listening so server.address() is not null
-    // This fixes the HMR WebSocket "string did not match the expected pattern" error
-    if (app.get("env") === "development") {
+
+    // In development, setup Vite AFTER server is listening
+    // This is required so server.address() is not null for HMR WebSocket
+    if (!isProduction) {
+      log("Setting up Vite dev server");
       await setupVite(app, server);
-    } else {
-      serveStatic(app);
+      log("Vite dev server configured");
     }
-    
+
     // Run avatar migration in background after server starts
     autoMigrateAvatarsOnStartup()
       .then(() => reconcileCharacterAvatars())

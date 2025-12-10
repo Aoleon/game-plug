@@ -4,6 +4,7 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
+  base: '/',
   plugins: [
     react(),
     runtimeErrorOverlay(),
@@ -77,6 +78,14 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
+    host: '0.0.0.0',
+    hmr: {
+      protocol: 'wss',
+      host: 'game-plug.robinswood.io',
+      port: 443,
+      clientPort: 443,
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
